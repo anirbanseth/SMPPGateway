@@ -1,0 +1,96 @@
+{
+  "SmppOptions": {
+    "databasesettings": {
+      "databasetype": "mysql",
+      //"connectionstring": "server=127.0.0.1;uid=root;pwd=P@ssw0rd;database=bulksms",
+      "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms"
+    },
+    "providers": [
+      /*{
+        "smstype": "T",
+        "operator": "IFB",
+        "instance": "1",
+        "host": "smpp.ifbhub.com",
+        "port": 8012,
+        "secured": false,
+        "systemid": "ifb_industries",
+        "password": "P@ssw0rd",
+        "systemtype": "IFB-TEST",
+        "addrton": 0,
+        "addrnpi": 0,
+        "addressrange": "",
+        "defaultencoding": "DEFAULT",
+        "deliverydateformat": "yyMMddHHmmss",
+        "tps": 100,
+        "dltcost": 0.01,
+        "submitcost": 0.1,
+        "maxqueue": 5000,
+        "maxretry": 4
+      },
+      {
+        "smstype": "T",
+        "operator": "IFBTEST",
+        "instance": "1",
+        "host": "172.105.58.140",
+        "port": 2345,
+        "secured": false,
+        "systemid": "Tester1",
+        "password": "Tester@4",
+        "systemtype": "bulksms",
+        "addrton": 0,
+        "addrnpi": 0,
+        "addressrange": "",
+        "defaultencoding": "DEFAULT",
+        "deliverydateformat": "yyMMddHHmmss",
+        "tps": 100,
+        "dltcost": 0.01,
+        "submitcost": 0.1,
+        "maxqueue": 5000,
+        "maxretry": 4
+      },*/
+      {
+        "smstype": "T",
+        "operator": "IFB",
+        "instance": "1",
+        "host": "103.153.58.106",
+        "port": 4444,
+        "secured": false,
+        "systemid": "dreamtrpg.trans",
+        "password": "i3I7J",
+        "systemtype": "",
+        "addrton": 0,
+        "addrnpi": 0,
+        "addressrange": "",
+        "defaultencoding": "DEFAULT",
+        "deliverydateformat": "yyMMddHHmmss",
+        "tps": 100,
+        "dltcost": 0.01,
+        "submitcost": 0.1,
+        "maxqueue": 5000,
+        "maxretry": 4
+      }/*,
+      {
+        "smstype": "T",
+        "operator": "INFOBIP_BSNL",
+        "instance": "1",
+        "host": "smpp3.infobip.com",
+        "port": 8888,
+        "secured": false,
+        "systemid": "turain_bsnl2",
+        "password": "Turain@2",
+        "systemtype": "bulksms",
+        "addrton": 0,
+        "addrnpi": 0,
+        "addressrange": "",
+        "defaultencoding": "DEFAULT",
+        "deliverydateformat": "yyMMddHHmmss",
+        "tps": 100,
+        "dltcost": 0.01,
+        "submitcost": 0.1,
+        "maxqueue": 5000,
+        "maxretry": 4
+      }*/
+
+    ]
+  }
+}

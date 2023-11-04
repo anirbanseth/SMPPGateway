@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.7.34031.279
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMSGateway.DataManager", "SMSGateway.DataManager\SMSGateway.DataManager.csproj", "{81148F42-F9A8-401D-8D22-EAE96AD5F8C6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMSGateway.Tools", "SMSGateway.Tools\SMSGateway.Tools.csproj", "{EA80E267-B5FA-403E-AB37-4A69C16A9A8B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMSGateway.SMPPClient", "SMSGateway.SMPPClient\SMSGateway.SMPPClient.csproj", "{88AE4397-C140-48EE-A271-1481CEE6C328}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SMSGateway.SMSCClient", "SMSGateway.SMSCClient\SMSGateway.SMSCClient.csproj", "{ADA83468-19B9-48CB-A28E-1C219A313A58}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SMSGateway.Entity", "SMSGateway.Entity\SMSGateway.Entity.csproj", "{0AAB039F-48F4-4795-9D1D-6FA423133E90}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81148F42-F9A8-401D-8D22-EAE96AD5F8C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81148F42-F9A8-401D-8D22-EAE96AD5F8C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81148F42-F9A8-401D-8D22-EAE96AD5F8C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81148F42-F9A8-401D-8D22-EAE96AD5F8C6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EA80E267-B5FA-403E-AB37-4A69C16A9A8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA80E267-B5FA-403E-AB37-4A69C16A9A8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA80E267-B5FA-403E-AB37-4A69C16A9A8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA80E267-B5FA-403E-AB37-4A69C16A9A8B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88AE4397-C140-48EE-A271-1481CEE6C328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88AE4397-C140-48EE-A271-1481CEE6C328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88AE4397-C140-48EE-A271-1481CEE6C328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88AE4397-C140-48EE-A271-1481CEE6C328}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADA83468-19B9-48CB-A28E-1C219A313A58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADA83468-19B9-48CB-A28E-1C219A313A58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADA83468-19B9-48CB-A28E-1C219A313A58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADA83468-19B9-48CB-A28E-1C219A313A58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AAB039F-48F4-4795-9D1D-6FA423133E90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AAB039F-48F4-4795-9D1D-6FA423133E90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AAB039F-48F4-4795-9D1D-6FA423133E90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AAB039F-48F4-4795-9D1D-6FA423133E90}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BF1A6D12-B8E0-40BA-A0A0-CE9A0E3FB2D9}
+	EndGlobalSection
+EndGlobal
