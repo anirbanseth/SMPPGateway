@@ -77,17 +77,17 @@ namespace SMSGateway.SMSCClient
         /// <summary>
         /// Addr Type Of Number (TON)
         /// </summary>
-        public byte AddrTon { get; set; } = 0;
+        public byte AddrTon { get; set; }
 
         /// <summary>
         /// Addr Numbering Plan Indicator (NPI)
         /// </summary>
-        public byte AddrNpi { get; set; } = 0;
+        public byte AddrNpi { get; set; }
 
         /// <summary>
         /// Address Range VARCHAR 41 MAX
         /// </summary>
-        public string AddressRange { get; set; } = "";
+        public string AddressRange { get; set; }
         //{
         //    get
         //    {
@@ -108,7 +108,7 @@ namespace SMSGateway.SMSCClient
         //}
 
         private uint sequenceNumber;
-        private byte messageIdentificationNumber = 0;
+        private byte messageIdentificationNumber;
         //private string addressRange = "";
         public MessageEncoding DefaultEncoding { get; set; }
 
@@ -208,6 +208,8 @@ namespace SMSGateway.SMSCClient
         {
             this.Operator = Operator;
             this.Instance = instance;
+            this.Instances = 1;
+            this.MessageIdType = "STRING";
         }
 
         public SMSC() { }
@@ -251,6 +253,10 @@ namespace SMSGateway.SMSCClient
                 {
                     Monitor.Exit(this);
                 }
+            }
+            internal set
+            {
+                sequenceNumber = value;
             }
         }//SequenceNumber
 
@@ -298,6 +304,37 @@ namespace SMSGateway.SMSCClient
         public string DeliveryDateFormat { get; set; }
         public int MaxQueue { get; set; }
         public int MaxRetry { get; set; }
+        public int Instances { get; set; }
+        public string MessageIdType { get; set; }
+
+        public SMSC Clone()
+        {
+            SMSC m = new SMSC();
+            m.Operator = this.Operator;
+            m.Instance = this.Instance;
+            m.Host = this.Host;
+            m.Port = this.Port;
+            m.Secured = this.Secured;
+            m.SystemId = this.SystemId;
+            m.Password = this.Password;
+            m.SystemType = this.SystemType;
+            m.AddrTon = this.AddrTon;
+            m.AddrNpi = this.AddrNpi;
+            m.AddressRange = this.AddressRange;
+            m.sequenceNumber = this.sequenceNumber;
+            m.messageIdentificationNumber = this.messageIdentificationNumber;
+            m.DefaultEncoding = this.DefaultEncoding;
+            m.SequenceNumber = this.SequenceNumber;
+            m.TPS = this.TPS;
+            m.DLTCost = this.DLTCost;
+            m.SubmitCost = this.SubmitCost;
+            m.DeliveryDateFormat = this.DeliveryDateFormat;
+            m.MaxQueue = this.MaxQueue;
+            m.MaxRetry = this.MaxRetry;
+            m.Instances = this.Instances;
+            m.MessageIdType = this.MessageIdType;
+            return m;
+        }
     }
 
     //public class SMSCArray

@@ -87,11 +87,6 @@ namespace SMSGateway.SMPPClient
                     _logger.LogError(ex.Message, ex);
                 }
                 _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Finish");
-                //GC.Collect();
-                //GC.WaitForPendingFinalizers();
-                _logger.LogDebug("DatabaseWorker_ExecuteAsync :: GC Finish");
-                
-                //await Task.Delay(2000, stoppingToken);
 
                 try
                 {

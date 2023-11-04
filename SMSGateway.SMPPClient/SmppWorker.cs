@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using Org.BouncyCastle.Utilities.Encoders;
 using SMSGateway.DataManager;
 using SMSGateway.Entity;
 using SMSGateway.SMSCClient;
@@ -31,7 +32,7 @@ namespace SMSGateway.SMPPClient
                 .Build();
 
             options = Configuration.GetOptions<SmppOptions>();
-
+            options.KernelParameters.Save();
         }
         #endregion
 
@@ -46,27 +47,23 @@ namespace SMSGateway.SMPPClient
 
             foreach (SMSC smsc in options.Providers)
             {
-
-                //SMSC smsc = new SMSC(
-                //    host: "smpp.ifbhub.com",
-                //    port: 8012,
-                //    systemId: "ifb_industries",
-                //    password: "P@ssw0rd",
-                //    systemType: "IFB-TEST"
-                //  );
-
-                SMPPConnection connection = new SMPPConnection(
-                    smsc: smsc,
-                    onSmppBinded: Connection_OnSmppBinded
-                );
-                connection.OnUnbind += Connection_OnUnbind;
-                connection.OnLog += Connection_OnLog;
-                connection.OnSendSms += Connection_OnSendSms;
-                connection.OnSubmitSm += Connection_OnSubmitSm;
-                connection.OnSubmitSmResp += Connection_OnSubmitSmResp;
-                connection.OnDeliverSm += Connection_OnDeliverSm;
-                SmppConnectionManager.Connections.Add(connection);
-
+                for (int instanceCount = 0; instanceCount < smsc.Instances; instanceCount++)
+                {
+                    SMSC sMSC = smsc.Clone();
+                    sMSC.Instance = (instanceCount + 1).ToString();
+                    sMSC.TPS = smsc.TPS / smsc.Instances;
+                    SMPPConnection connection = new SMPPConnection(
+                        smsc: sMSC,
+                        onSmppBinded: Connection_OnSmppBinded
+                    );
+                    connection.OnUnbind += Connection_OnUnbind;
+                    connection.OnLog += Connection_OnLog;
+                    connection.OnSendSms += Connection_OnSendSms;
+                    connection.OnSubmitSm += Connection_OnSubmitSm;
+                    connection.OnSubmitSmResp += Connection_OnSubmitSmResp;
+                    connection.OnDeliverSm += Connection_OnDeliverSm;
+                    SmppConnectionManager.Connections.Add(connection);
+                }
             }
             //while(!connection.CanSend)
             //{
@@ -155,11 +152,7 @@ namespace SMSGateway.SMPPClient
                 {
                     _logger.LogError(ex.Message, ex);
                 }
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                //await Task.Delay(1000, stoppingToken);
-
-
+                _logger.LogDebug("SmppWorker_ExecuteAsync :: Finish");
 
                 try
                 {
@@ -169,7 +162,6 @@ namespace SMSGateway.SMPPClient
                 {
                     //_logger.LogCritical(exception, "TaskCanceledException Error", exception.Message);
                 }
-                _logger.LogDebug("SmppWorker_ExecuteAsync :: Finish");
             }
 
             _logger.LogInformation("SmppWorker_ExecuteAsync :: Stopping");
@@ -259,6 +251,7 @@ namespace SMSGateway.SMPPClient
                 _logger.LogError(ex.Message, ex);
             }
         }
+
 
         #region [ Event Actions ]
 
@@ -387,21 +380,45 @@ namespace SMSGateway.SMPPClient
         {
             try
             {
+                Dictionary<string, string> dictionaryText = Utility.ParseDeliveryMessageText(e.TextString);
+
 
                 //Console.WriteLine($"{DateTime.Now.ToString("dd-MMM-yyyy HH:mm:ss.fff")} : { JsonConvert.SerializeObject(e) }");
                 //throw new NotImplementedException();
+                string messageId = e.ReceiptedMessageID;
+                switch (connection.MC.MessageIdType?.ToUpper())
+                {
+                    
+                    case "INT_HEX":
+                        // convery hex to int
+                        messageId = Int64
+                            .Parse(messageId, System.Globalization.NumberStyles.HexNumber)
+                            .ToString();                        
+                        break;
+                    case "HEX_INT":
+                        // convert int to hex
+                        messageId = Int64
+                            .Parse(messageId, System.Globalization.NumberStyles.Any)
+                            .ToString("x");
+                        break;
+                    case "STRING":
+                    case "INT_INT":
+                    case "HEX_HEX":
+                    default:
+                        break;
+                }
 
                 new BulksSmsManager().SaveDeliveryReport(
-                    message_id: e.ReceiptedMessageID,
-                    destination: e.To,
-                    sender: e.From,
-                    sms_dlr_status_id: String.Empty,
+                    message_id: messageId,
+                    destination: e.From,
+                    sender: e.To,
+                    sms_dlr_status_id: Utility.MessageDeliveryStatus(e.MessageState),
                     smsc_details_id: connection?.MC?.Operator,
                     smpp_user_details_id: 0,
                     message: String.Empty,
-                    submit_date: ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime) e.SubmitDate, // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
-                    dlr_status_date: ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime) e.DoneDate, //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
-                    errorCode: String.Empty,
+                    submit_date: ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.SubmitDate, // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                    dlr_status_date: ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate, //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                    errorCode: dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
                     shortmessage: e.TextString
                 ).Wait();
 

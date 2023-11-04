@@ -5,11 +5,28 @@
       //"connectionstring": "server=127.0.0.1;uid=root;pwd=P@ssw0rd;database=bulksms",
       "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms"
     },
+    "kernelparameters": {
+      "maxbuffersize": 1048576, // 1MB
+      "maxpdusize": 131072,
+      "reconnecttimeout": 45000, // miliseconds
+      "waitpacketresponse": 30, //seconds
+      "canbedisconnected": 180, //seconds - BETTER TO BE MORE THAN TryToReconnectTimeOut
+      "nationalnumberlength": 8,
+      "maxundeliverablemessages": 30,
+      "askdeliveryreceipt": 0, //NoReceipt : 0,
+      "splitlongtext": true,
+      "useenquirelink": true,
+      "enquirelinktimeout": 45000, //miliseconds
+      "maxsequencenumber": 4294967295, // UInt32.MaxValue
+      "maxidentificationnumber": 255, // Byte.MaxValue, //0xFF,
+      "deliveryloadtimeout": 100,
+      "deliverysendtimeout": 5
+    },
     "providers": [
-      /*{
+        /*{
         "smstype": "T",
         "operator": "IFB",
-        "instance": "1",
+        "instances": 1,
         "host": "smpp.ifbhub.com",
         "port": 8012,
         "secured": false,
@@ -30,7 +47,7 @@
       {
         "smstype": "T",
         "operator": "IFBTEST",
-        "instance": "1",
+        "instances": 1,
         "host": "172.105.58.140",
         "port": 2345,
         "secured": false,
@@ -48,27 +65,29 @@
         "maxqueue": 5000,
         "maxretry": 4
       },*/
-      {
-        "smstype": "T",
-        "operator": "IFB",
-        "instance": "1",
-        "host": "103.153.58.106",
-        "port": 4444,
-        "secured": false,
-        "systemid": "dreamtrpg.trans",
-        "password": "i3I7J",
-        "systemtype": "",
-        "addrton": 0,
-        "addrnpi": 0,
-        "addressrange": "",
-        "defaultencoding": "DEFAULT",
-        "deliverydateformat": "yyMMddHHmmss",
-        "tps": 100,
-        "dltcost": 0.01,
-        "submitcost": 0.1,
-        "maxqueue": 5000,
-        "maxretry": 4
-      }/*,
+        {
+          "smstype": "T",
+          "operator": "IFB",
+          "instances": 4,
+          "host": "103.153.58.106",
+          "port": 4444,
+          "secured": false,
+          "systemid": "dreamtrpg.trans",
+          "password": "i3I7J",
+          "systemtype": "WWW",
+          "addrton": 0,
+          "addrnpi": 0,
+          "addressrange": "",
+          "defaultencoding": "DEFAULT",
+          "deliverydateformat": "yyMMddHHmmss",
+          // STRING, INT_INT, INT_HEX, HEX_INT, HEX_HEX
+          "messageidtype": "INT_HEX",
+          "tps": 100,
+          "dltcost": 0.01,
+          "submitcost": 0.1,
+          "maxqueue": 5000,
+          "maxretry": 4
+        } /*,
       {
         "smstype": "T",
         "operator": "INFOBIP_BSNL",
@@ -91,6 +110,6 @@
         "maxretry": 4
       }*/
 
-    ]
-  }
+      ]
+    }
 }

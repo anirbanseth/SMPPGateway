@@ -21,6 +21,7 @@ IHost host = Host.CreateDefaultBuilder(args)
     {
         services.AddHostedService<SmppWorker>();
         services.AddHostedService<DatabaseWorker>();
+        services.AddHostedService<GCWorker>();
     })
     .ConfigureAppConfiguration(config => {
         config
@@ -49,6 +50,6 @@ switch (options.DatabaseSettings.DatabaseType?.ToLower())
     default:
         break;
 }
-
+Thread.Sleep(100);
 
 host.Run();

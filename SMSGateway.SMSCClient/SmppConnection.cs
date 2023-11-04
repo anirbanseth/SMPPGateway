@@ -26,7 +26,7 @@ namespace SMSGateway.SMSCClient
         //public Socket workSocket = null;								// Client socket.
         public TcpClient workSocket = null;								// Client socket.
         public SslStream stream = null;								    // Client stream.
-        public const int BufferSize = KernelParameters.MaxBufferSize;      // Size of receive buffer.
+        public static int BufferSize = KernelParameters.MaxBufferSize;      // Size of receive buffer.
         public int Position = 0;										// Size of receive buffer.
         public byte[] buffer = new byte[BufferSize];					// receive buffer.
     }
@@ -2238,7 +2238,6 @@ namespace SMSGateway.SMSCClient
                 Bind_PDU[++pos] = 0x34; //interface version
                 Bind_PDU[++pos] = (byte)MC.AddrTon; //addr_ton
                 Bind_PDU[++pos] = (byte)MC.AddrNpi; //addr_npi
-                Bind_PDU[++pos] = (byte)MC.AddrNpi; //addr_npi
 
                 //address_range
                 pos++;
@@ -4166,10 +4165,21 @@ namespace SMSGateway.SMSCClient
                 if (isDeliveryReceipt)
                 {
                     isDeliveryReceipt = true;
-                    messageState = _message_state;
+                    try
+                    {
+                        messageState = _message_state;
+                        if (_receipted_message_id_len > 0)
+                            receiptedMessageID = Encoding.ASCII.GetString(_receipted_message_id, 0, _receipted_message_id_len - 1); ;
+                    }
+                    catch (Exception ex)
+                    {
+                        Dictionary<string, string> dictionaryText = Utility.ParseDeliveryMessageText(textString);
+                        messageState = Utility.MessageDeliveryStatus(dictionaryText["stat"]);
+                        if (dictionaryText.ContainsKey("id"))
+                            receiptedMessageID = dictionaryText["id"];
+                    }
+
                     
-                    if (_receipted_message_id_len > 0)
-                        receiptedMessageID = Encoding.ASCII.GetString(_receipted_message_id, 0, _receipted_message_id_len - 1); ;
 
                     //if (!ReferenceEquals(tlvList, null))
                     //{
