@@ -241,7 +241,7 @@ namespace SMSGateway.SMSCClient
             byte defaultMsgId,
             byte length,
             byte[] message,
-            List<OptionalParameter> optionalParams = null,
+            List<OptionalParameter>? optionalParams = null,
             string? refId = null,
             int retryIndex = 0
         )
@@ -292,7 +292,7 @@ namespace SMSGateway.SMSCClient
             byte defaultMsgId,
             byte length,
             byte[] message,
-            List<OptionalParameter> optionalParams = null
+            List<OptionalParameter>? optionalParams = null
         ) : base(
                 smppEventArgs.Id,
                 smppEventArgs.CommandLength,
@@ -345,7 +345,8 @@ namespace SMSGateway.SMSCClient
             byte defaultMsgId,
             byte length,
             byte[] message,
-            List<OptionalParameter> optionalParams = null
+            List<OptionalParameter> optionalParams = null,
+            IDictionary<string, object>? additionalParameters = null
         ) : base(commandLength, Command.SUBMIT_SM, commandStatus, sequence, pdu, optionalParams)
         {
             this.ServiceType = serviceType;
@@ -365,6 +366,8 @@ namespace SMSGateway.SMSCClient
             this.DataCoding = dataCoding;
             this.DefaultMsgId = defaultMsgId;
             this.SmLength = length;
+            this.OptionalParams = optionalParams;
+            this.AdditionalParameters = additionalParameters;
         }
         public string ServiceType { get; }
         public byte SourceAddrTon { get; }
@@ -386,6 +389,7 @@ namespace SMSGateway.SMSCClient
         public byte[] Message { get; private set; }
         public string? RefId { get; set; }
         public int RetryIndex { get; set; }
+        public IDictionary<string, object>? AdditionalParameters { get; set; }
         public new void Dispose()
         {
             this.SourceAddress = String.Empty;
@@ -590,7 +594,7 @@ namespace SMSGateway.SMSCClient
 
         public SendSmsEventArgs()
         {
-
+            AdditionalParameters = new Dictionary<string, object>();
         }
 
         public string SourceAddress { get;set; }
@@ -604,6 +608,7 @@ namespace SMSGateway.SMSCClient
         public string RefId { get; set; }
         public int RetryIndex { get; set; }
         public DateTime SentOn { get; set; }
+        public IDictionary<string, object> AdditionalParameters { get; set; }
         public void Dispose()
         {
             //throw new NotImplementedException();

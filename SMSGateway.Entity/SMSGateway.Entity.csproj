@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SMSGateway.Tools\SMSGateway.Tools.csproj" />
+  </ItemGroup>
+
 </Project>

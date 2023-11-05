@@ -38,7 +38,9 @@ namespace SMSGateway.DataManager
         public async Task<List<SmsMessage>> GetMarkedMessages(string status)
         {
             string query = $"SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; " +
-              $"SELECT destination, coding, message, senderid, enitityid, send_sms_id, templateid, piority, status, operator, retry_count " +
+              $"SELECT destination, coding, message, senderid, enitityid, send_sms_id, " +
+              $"templateid, piority, status, operator, retry_count, " +
+              $"sms_campaign_head_details_id, sms_campaign_details_id, smpp_user_details_id " +
               $"FROM send_sms WHERE status = @status; ";
             //$"AND operator = '$operator'"; 
 
@@ -62,12 +64,17 @@ namespace SMSGateway.DataManager
                     m.Coding = row.Field<int>("coding");
                     m.Message = row.Field<string>("message");
                     m.From = row.Field<string>("senderid");
+                    m.AskDeliveryReceipt = true;
+                    m.Priority = (byte) row.Field<int>("piority");
                     m.PEID = row.Field<string>("enitityid");
                     m.TMID = "";
                     m.TemplateId = row.Field<string>("templateid");
                     m.RefId = row.Field<Int64>("send_sms_id").ToString();
                     m.Operator = row.Field<string>("operator");
                     m.RetryIndex = row.Field<int>("retry_count");
+                    m.AdditionalData["sms_campaign_head_details_id"] = row.Field<Int64>("sms_campaign_head_details_id");
+                    m.AdditionalData["sms_campaign_details_id"] = row.Field<Int64>("sms_campaign_details_id");
+                    m.AdditionalData["smpp_user_details_id"] = row.Field<Int32>("smpp_user_details_id");
                     messages.Add(m);
                 }
             }

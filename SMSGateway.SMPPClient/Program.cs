@@ -6,7 +6,7 @@ using static Org.BouncyCastle.Math.EC.ECCurve;
 
 //IConfiguration Configuration { get; set;  }
 
-Console.WriteLine($"Current Director : {Directory.GetCurrentDirectory()}");
+//Console.WriteLine($"Current Director : {Directory.GetCurrentDirectory()}");
 
 IConfiguration Configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())

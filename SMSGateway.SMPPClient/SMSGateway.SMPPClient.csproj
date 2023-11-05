@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Constants.cs" />
     <Compile Remove="SMPPClient.cs" />
   </ItemGroup>
 

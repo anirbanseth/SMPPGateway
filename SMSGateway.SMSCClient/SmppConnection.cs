@@ -560,12 +560,30 @@ namespace SMSGateway.SMSCClient
         //}
 
         #region [ Send Message ]
+        /// <summary>
+        /// Send message using smpp connection
+        /// </summary>
+        /// <param name="from">Source Number / Code</param>
+        /// <param name="to">Destinatio Number</param>
+        /// <param name="splitLongText">Split long text</param>
+        /// <param name="text">Message Text</param>
+        /// <param name="askDeliveryReceipt">Request delivery receipt</param>
+        /// <param name="priorityFlag">Message priority : Bulk = 0, Normal = 1, Urgent = 2, VeryUrgent = 3</param>
+        /// <param name="dataEncoding">Text data encoding</param>
+        /// <param name="dataCoding">SMPP encoding to use</param>
+        /// <param name="refid"></param>
+        /// <param name="peId">PE ID</param>
+        /// <param name="templateId">Template ID</param>
+        /// <param name="tmId">TM ID</param>
+        /// <param name="retryIndex">Retry Number</param>
+        /// <returns></returns>
         public int SendSms(
             String from,
             String to,
             bool splitLongText,
             String text,
             byte askDeliveryReceipt,
+            byte priorityFlag,
             //byte esmClass, 
             Encoding dataEncoding,
             MessageEncoding dataCoding,
@@ -573,7 +591,8 @@ namespace SMSGateway.SMSCClient
             string peId,
             string templateId,
             string tmId,
-            int retryIndex = 0
+            int retryIndex = 0,
+            IDictionary<string, object>? additionalParameters = null
         )
         {
             int sequenceNo = -1;
@@ -594,7 +613,7 @@ namespace SMSGateway.SMSCClient
             registeredDelivery = askDeliveryReceipt;
 
             byte protocolId = 0;
-            byte priorityFlag = PriorityFlags.VeryUrgent;
+            //byte priorityFlag = PriorityFlags.VeryUrgent;
             DateTime sheduleDeliveryTime = DateTime.MinValue;
             DateTime validityPeriod = DateTime.MinValue;
             byte replaceIfPresentFlag = ReplaceIfPresentFlags.DoNotReplace;
@@ -610,8 +629,10 @@ namespace SMSGateway.SMSCClient
             //Logger.Write(LogType.Steps, String.Format("{0} Message with length {3} in Coding {1} {2}", isLongMessage ? "Extended" : "Normal", (int)dataCoding, dataCoding, smsText.Length));
             logMessage(LogType.Steps, String.Format("{0} Message with length {3} in Coding {1} {2}", isLongMessage ? "Extended" : "Normal", (int)dataCoding, dataCoding, smsText.Length));
 
-            if (isLongMessage)
-                splitSize = SmsEncoding.SplitSize[(int)dstCoding];
+            //if (isLongMessage)
+            //    splitSize = SmsEncoding.SplitSize[(int)dstCoding];
+            if (!isLongMessage)
+                splitSize = maxLength;
 
             logMessage(LogType.Steps, String.Format("Max Length : {0}\tData Size : {1}\tSplit size : {2}", maxLength, SmsEncoding.DataSize[(int)dstCoding], splitSize));
 
@@ -620,7 +641,7 @@ namespace SMSGateway.SMSCClient
             byte[] destBytes;
             while (index < smsText.Length)
             {
-                int count = splitSize > (smsText.Length - index) ? (smsText.Length - index) : splitSize;
+                int count =  splitSize > (smsText.Length - index) ? (smsText.Length - index) : splitSize;
                 logMessage(LogType.Steps, String.Format("COUNT:{0}", count));
                 byte[] messageBytes;
                 do
@@ -666,7 +687,7 @@ namespace SMSGateway.SMSCClient
                                             0x00, protocolId, priorityFlag,
                                             sheduleDeliveryTime, validityPeriod, registeredDelivery, replaceIfPresentFlag,
                                             (byte)dataCoding, smDefaultMsgId, messages[0], peId, templateId, tmId,
-                                            refid, retryIndex);
+                                            refid, retryIndex, additionalParameters);
 
 
                 Task.Run(() => this.OnSendSms(this, 
@@ -732,7 +753,7 @@ namespace SMSGateway.SMSCClient
                                             sheduleDeliveryTime, validityPeriod, registeredDelivery, replaceIfPresentFlag,
                                             (byte)dataCoding, smDefaultMsgId, messages[messageIndex], messageIdentification, 
                                             (byte)(messageIndex + 1), (byte)(messages.Count), peId, templateId, tmId, 
-                                            refid, retryIndex);
+                                            refid, retryIndex, additionalParameters);
 
                     #region [ Database Entry ]
                     ////For DataBase Entry
@@ -778,7 +799,8 @@ namespace SMSGateway.SMSCClient
                         TemplateID = templateId,
                         RefId = refid,
                         RetryIndex = retryIndex,
-                        SentOn = DateTime.Now
+                        SentOn = DateTime.Now,
+                        AdditionalParameters = additionalParameters
                     }
                 ));
             }
@@ -794,7 +816,8 @@ namespace SMSGateway.SMSCClient
                                 byte esmClass, byte protocolId, byte priorityFlag,
                                 DateTime sheduleDeliveryTime, DateTime validityPeriod, byte registeredDelivery,
                                 byte replaceIfPresentFlag, byte dataCoding, byte smDefaultMsgId,
-                                byte[] message, string peId, string templateId, string tmId, string? refid = null, int retryIndex = 0)
+                                byte[] message, string peId, string templateId, string tmId, string? refid = null, 
+                                int retryIndex = 0, IDictionary<string, object>? additionalParameters = null)
         {
             try
             {
@@ -936,6 +959,8 @@ namespace SMSGateway.SMSCClient
                         refid,
                         retryIndex
                     );
+                submitSmEventArgs.AdditionalParameters = additionalParameters;
+
 
                 lock (submittedMessages.SyncRoot)
                 {
@@ -959,7 +984,8 @@ namespace SMSGateway.SMSCClient
                             DateTime sheduleDeliveryTime, DateTime validityPeriod, byte registeredDelivery,
                             byte replaceIfPresentFlag, byte dataCoding, byte smDefaultMsgId,
                             byte[] message, byte messageIdentification, byte messageIndex, byte messageTotalIndex,
-                            string peId, string templateId, string tmId, string? refid = null, int retryIndex = 0
+                            string peId, string templateId, string tmId, string? refid = null, 
+                            int retryIndex = 0, IDictionary<string, object>? additionalParameters = null
                     )
         {
             int result = -1;
@@ -1122,6 +1148,7 @@ namespace SMSGateway.SMSCClient
                         refid,
                         retryIndex
                     );
+                submitSmEventArgs.AdditionalParameters = additionalParameters;
 
                 lock (submittedMessages.SyncRoot)
                 {

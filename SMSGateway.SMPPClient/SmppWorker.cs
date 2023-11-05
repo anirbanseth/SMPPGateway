@@ -47,7 +47,7 @@ namespace SMSGateway.SMPPClient
 
             foreach (SMSC smsc in options.Providers)
             {
-                for (int instanceCount = 0; instanceCount < smsc.Instances; instanceCount++)
+                for (int instanceCount = 0; instanceCount < (smsc.Instances < 1 ? 1 : smsc.Instances); instanceCount++)
                 {
                     SMSC sMSC = smsc.Clone();
                     sMSC.Instance = (instanceCount + 1).ToString();
@@ -103,14 +103,14 @@ namespace SMSGateway.SMPPClient
         #region [ Execute Async ]
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("SmppWorker_ExecuteAsync :: Start");
+            _logger.LogDebug("SmppWorker_ExecuteAsync :: Start");
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogDebug("SmppWorker_ExecuteAsync :: Tick");
                 try
                 {
-                    //_logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                    //_logger.LogDebug("Worker running at: {time}", DateTimeOffset.Now);
                     foreach (SMPPConnection connection in SmppConnectionManager.Connections)
                     {
 
@@ -164,9 +164,9 @@ namespace SMSGateway.SMPPClient
                 }
             }
 
-            _logger.LogInformation("SmppWorker_ExecuteAsync :: Stopping");
+            _logger.LogDebug("SmppWorker_ExecuteAsync :: Stopping");
             Stop();
-            _logger.LogInformation("SmppWorker_ExecuteAsync :: Stopped");
+            _logger.LogDebug("SmppWorker_ExecuteAsync :: Stopped");
         }
         #endregion
 
@@ -223,13 +223,15 @@ namespace SMSGateway.SMPPClient
                             splitLongText: true,
                             text: m.Message,
                             askDeliveryReceipt: (byte)1,
+                            priorityFlag: m.Priority,
                             dataEncoding: m.Coding == 0 ? Encoding.ASCII : Encoding.BigEndianUnicode,
                             dataCoding: m.Coding == 0 ? Tools.MessageEncoding.DEFAULT : MessageEncoding.UCS2,
                             refid: m.RefId,
                             peId: m.PEID,
                             tmId: m.TMID,
                             templateId: m.TemplateId,
-                            retryIndex: m.RetryIndex
+                            retryIndex: m.RetryIndex,
+                            additionalParameters: m.AdditionalData
                         );
                     }
                     else
@@ -332,7 +334,16 @@ namespace SMSGateway.SMPPClient
         }
         #endregion
 
+        protected object GetAdditionalParameterValue(IDictionary<string, object> parameters, string key, object defaultValue = null)
+        {
+            if (ReferenceEquals(parameters, null))
+                return defaultValue;
 
+            if (parameters.ContainsKey(key))
+                return parameters[key];
+
+            return defaultValue;
+        }
 
         #region [ Submit SMS Response ]
         private void Connection_OnSubmitSmResp(SMPPConnection connection, SubmitSmEventArgs submitSmEventArgs, SubmitSmRespEventArgs submitSmRespEvent)
@@ -345,9 +356,10 @@ namespace SMSGateway.SMPPClient
                         send_sms_s1_id: Convert.ToInt64(submitSmEventArgs.RefId),
                         send_sms_p1_id: Convert.ToInt64(submitSmEventArgs.RefId),
                         send_sms_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        sms_campaign_head_details_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        sms_campaign_details_id: 0,
-                        smpp_user_details_id: 0,
+                        //sms_campaign_head_details_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                        sms_campaign_head_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_head_details_id", 0),
+                        sms_campaign_details_id: (long) GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_details_id", 0),
+                        smpp_user_details_id: (int) GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "smpp_user_details_id", 0),
                         message: Utility.RemoveApostropy(Encoding.UTF8.GetString(submitSmEventArgs.Message)),
                         senderid: submitSmEventArgs.SourceAddress,
                         enitityid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
@@ -412,7 +424,8 @@ namespace SMSGateway.SMPPClient
                     message_id: messageId,
                     destination: e.From,
                     sender: e.To,
-                    sms_dlr_status_id: Utility.MessageDeliveryStatus(e.MessageState),
+                    //sms_dlr_status_id: Utility.MessageDeliveryStatus(e.MessageState),
+                    sms_dlr_status_id: e.MessageState.ToString(),
                     smsc_details_id: connection?.MC?.Operator,
                     smpp_user_details_id: 0,
                     message: String.Empty,
@@ -442,23 +455,24 @@ namespace SMSGateway.SMPPClient
             {
                 switch (e.LogType)
                 {
-                    case LogType.Error:
-                        _logger.LogError(e.Message, connection.MC.Operator, connection.MC.Instance);
+                    case LogType.Pdu:
+                        _logger.LogTrace(e.Message, connection.MC.Operator, connection.MC.Instance);
+                        break;
+                    case LogType.Steps:
+                        _logger.LogDebug(e.Message, connection.MC.Operator, connection.MC.Instance);
                         break;
                     case LogType.Warning:
                         _logger.LogWarning(e.Message, connection.MC.Operator, connection.MC.Instance);
                         break;
+                    case LogType.Error:
+                    case LogType.Exceptions:
+                        _logger.LogError(e.Message, connection.MC.Operator, connection.MC.Instance);
+                        break;
                     case LogType.Information:
                         _logger.LogInformation(e.Message, connection.MC.Operator, connection.MC.Instance);
                         break;
-                    case LogType.Pdu:
-                        _logger.LogDebug(e.Message, connection.MC.Operator, connection.MC.Instance);
-                        break;
-                    case LogType.Exceptions:
-                        _logger.LogCritical(e.Message, connection.MC.Operator, connection.MC.Instance);
-                        break;
                     default:
-                        _logger.LogTrace(e.Message, connection.MC.Operator, connection.MC.Instance);
+                        _logger.Log(LogLevel.None, e.Message, connection.MC.Operator, connection.MC.Instance);
                         break;
 
                 }

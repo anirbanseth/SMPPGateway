@@ -48,7 +48,7 @@ namespace SMSGateway.SMPPClient
         #region [ Execute Async ]
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("DatabaseWorker_ExecuteAsync :: Start");
+            _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Start");
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -99,9 +99,9 @@ namespace SMSGateway.SMPPClient
             }
 
 
-            _logger.LogInformation("DatabaseWorker_StopAsync :: Stopping");
+            _logger.LogDebug("DatabaseWorker_StopAsync :: Stopping");
             await Stop(stoppingToken);
-            _logger.LogInformation("DatabaseWorker_StopAsync :: Cleanup complete");
+            _logger.LogDebug("DatabaseWorker_StopAsync :: Cleanup complete");
         }
         #endregion
 

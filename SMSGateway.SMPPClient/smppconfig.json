@@ -65,7 +65,7 @@
         "maxqueue": 5000,
         "maxretry": 4
       },*/
-        {
+        /*{
           "smstype": "T",
           "operator": "IFB",
           "instances": 4,
@@ -87,28 +87,30 @@
           "submitcost": 0.1,
           "maxqueue": 5000,
           "maxretry": 4
-        } /*,
-      {
-        "smstype": "T",
-        "operator": "INFOBIP_BSNL",
-        "instance": "1",
-        "host": "smpp3.infobip.com",
-        "port": 8888,
-        "secured": false,
-        "systemid": "turain_bsnl2",
-        "password": "Turain@2",
-        "systemtype": "bulksms",
-        "addrton": 0,
-        "addrnpi": 0,
-        "addressrange": "",
-        "defaultencoding": "DEFAULT",
-        "deliverydateformat": "yyMMddHHmmss",
-        "tps": 100,
-        "dltcost": 0.01,
-        "submitcost": 0.1,
-        "maxqueue": 5000,
-        "maxretry": 4
-      }*/
+        },*/
+        {
+          "smstype": "T",
+          "operator": "IFB",
+          "instances": 1,
+          "host": "smpp3.infobip.com",
+          "port": 8888,
+          "secured": false,
+          "systemid": "turain_bsnl2",
+          "password": "Turain@2",
+          "systemtype": "bulksms",
+          "addrton": 0,
+          "addrnpi": 0,
+          "addressrange": "",
+          "defaultencoding": "DEFAULT",
+          "deliverydateformat": "yyMMddHHmmss",
+          // STRING, INT_INT, INT_HEX, HEX_INT, HEX_HEX
+          "messageidtype": "STRING",
+          "tps": 100,
+          "dltcost": 0.01,
+          "submitcost": 0.1,
+          "maxqueue": 5000,
+          "maxretry": 4
+        }
 
       ]
     }
