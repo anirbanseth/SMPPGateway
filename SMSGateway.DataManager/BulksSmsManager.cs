@@ -264,5 +264,13 @@ namespace SMSGateway.DataManager
 
         }
         #endregion
+
+        #region [ Delivery Report Processor ]
+        public async Task<int> ProcessDeliveryReport()
+        {
+            MySqlDbManager db = new MySqlDbManager("proc_delivery_report");
+            return await db.RunActionQueryAsync();
+        }
+        #endregion
     }
 }

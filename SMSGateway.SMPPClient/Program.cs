@@ -22,6 +22,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<SmppWorker>();
         services.AddHostedService<DatabaseWorker>();
         services.AddHostedService<GCWorker>();
+        services.AddHostedService<DeliveryReportWorker>();
+
     })
     .ConfigureAppConfiguration(config => {
         config

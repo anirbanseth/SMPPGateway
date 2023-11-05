@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections;
+﻿using SMSGateway.DataManager;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -7,24 +7,25 @@ using System.Threading.Tasks;
 
 namespace SMSGateway.SMPPClient
 {
-    public class GCWorker : BackgroundService
+    internal class DeliveryReportWorker : BackgroundService
     {
-        private readonly ILogger<GCWorker> _logger;
+        private readonly ILogger<DeliveryReportWorker> _logger;
 
         #region [ Constructor ]
-        public GCWorker(ILogger<GCWorker> logger)
+        public DeliveryReportWorker(ILogger<DeliveryReportWorker> logger)
         {
             _logger = logger;
         }
         #endregion
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while(!stoppingToken.IsCancellationRequested)
+
+            while (!stoppingToken.IsCancellationRequested)
             {
-                _logger.LogDebug("GCWorker :: Starting");
-                GC.WaitForPendingFinalizers();
-                GC.Collect();
-                _logger.LogDebug("GCWorker :: Complete");
+                _logger.LogDebug("DeliveryReportWorker :: Starting");
+                new BulksSmsManager().ProcessDeliveryReport().Wait();
+                _logger.LogDebug("DeliveryReportWorker :: Complete");
                 try
                 {
                     await Task.Delay(100, stoppingToken);
@@ -33,8 +34,11 @@ namespace SMSGateway.SMPPClient
                 {
                     //_logger.LogCritical(exception, "TaskCanceledException Error", exception.Message);
                 }
-                
+
             }
+            
+
+
         }
     }
 }
