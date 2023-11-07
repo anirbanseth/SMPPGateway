@@ -23,7 +23,7 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<DatabaseWorker>();
         services.AddHostedService<GCWorker>();
         services.AddHostedService<DeliveryReportWorker>();
-
+        services.AddHostedService<DeliveryGenerateWorker>();
     })
     .ConfigureAppConfiguration(config => {
         config

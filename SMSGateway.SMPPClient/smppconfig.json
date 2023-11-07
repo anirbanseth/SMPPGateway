@@ -22,8 +22,37 @@
       "deliveryloadtimeout": 100,
       "deliverysendtimeout": 5
     },
+    "deliverygenerateparams": [
+      {
+        // ENROUTE		1
+        // DELIVERED		2
+        // EXPIRED		3
+        // DELETED		4
+        // UNDELIVERABLE	5
+        // ACCEPTED		6
+        // UNKNOWN		7
+        // REJECTED		8
+        "PRO_PNG_TSP": [
+          {
+            "CUT": {
+              "2": [ "000" ],
+              "3": [ "000" ],
+              "5": [ "0001", "0002", "0003" ]
+            },
+            "BLK": {
+              "2": [ "000" ],
+              "5": [ "0001", "0002", "0003" ]
+            },
+            "DNDC": {
+              "3": ["000"],
+              "8": ["000"]
+            }
+          }
+        ]
+      }
+    ],
     "providers": [
-        /*{
+      /*{
         "smstype": "T",
         "operator": "IFB",
         "instances": 1,
@@ -65,7 +94,7 @@
         "maxqueue": 5000,
         "maxretry": 4
       },*/
-        /*{
+      /*{
           "smstype": "T",
           "operator": "IFB",
           "instances": 4,
@@ -88,30 +117,30 @@
           "maxqueue": 5000,
           "maxretry": 4
         },*/
-        {
-          "smstype": "T",
-          "operator": "IFB",
-          "instances": 1,
-          "host": "smpp3.infobip.com",
-          "port": 8888,
-          "secured": false,
-          "systemid": "turain_bsnl2",
-          "password": "Turain@2",
-          "systemtype": "bulksms",
-          "addrton": 0,
-          "addrnpi": 0,
-          "addressrange": "",
-          "defaultencoding": "DEFAULT",
-          "deliverydateformat": "yyMMddHHmmss",
-          // STRING, INT_INT, INT_HEX, HEX_INT, HEX_HEX
-          "messageidtype": "STRING",
-          "tps": 100,
-          "dltcost": 0.01,
-          "submitcost": 0.1,
-          "maxqueue": 5000,
-          "maxretry": 4
-        }
+      {
+        "smstype": "T",
+        "operator": "PRO_PNG_TSP",
+        "instances": 1,
+        "host": "smpp3.infobip.com",
+        "port": 8888,
+        "secured": false,
+        "systemid": "turain_bsnl2",
+        "password": "Turain@2",
+        "systemtype": "bulksms",
+        "addrton": 0,
+        "addrnpi": 0,
+        "addressrange": "",
+        "defaultencoding": "DEFAULT",
+        "deliverydateformat": "yyMMddHHmmss",
+        // STRING, INT_INT, INT_HEX, HEX_INT, HEX_HEX
+        "messageidtype": "STRING",
+        "tps": 100,
+        "dltcost": 0.01,
+        "submitcost": 0.1,
+        "maxqueue": 5000,
+        "maxretry": 4
+      }
 
-      ]
-    }
+    ]
+  }
 }

@@ -273,24 +273,34 @@ namespace SMSGateway.SMPPClient
         #endregion
 
         #region [ Send SMS ]
-        private void Connection_OnSendSms(SMPPConnection connnection, SendSmsEventArgs e)
+        private void Connection_OnSendSms(SMPPConnection connection, SendSmsEventArgs e)
         {
             try
             {
-                new BulksSmsManager()
-                   .UpdateSendSms(
-                        Convert.ToInt64(e.RefId),
-                        "SENT", 
-                        e.RetryIndex, 
-                        $"{connnection.MC.Operator}_{connnection.MC.Instance}",
-                        connnection.MC.DLTCost,
-                        connnection.MC.SubmitCost * e.MessageCount
-                    )
-                   .Wait();
+                Task.Run(async () => {
+                    decimal dlt_cost = (Decimal)GetAdditionalParameterValue(e.AdditionalParameters, "dlt_cost", connection.MC.DLTCost);
+                    decimal sms_cost = (Decimal)GetAdditionalParameterValue(e.AdditionalParameters, "sms_cost", connection.MC.SubmitCost);
+
+                    await new BulksSmsManager()
+                       .UpdateSendSms(
+                            Convert.ToInt64(e.RefId),
+                            "SENT",
+                            e.RetryIndex,
+                            $"{connection.MC.Operator}_{connection.MC.Instance}",
+                            dlt_cost,
+                            sms_cost * e.MessageCount
+                        );
+                }).ContinueWith(task => {
+                    if (task.IsFaulted)
+                    {
+                        var ex = task.Exception.InnerException != null ? task.Exception.InnerException : task.Exception;
+                        _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
+                    }
+                });
             }
             catch(Exception ex)
             {
-                _logger.LogCritical(ex.Message, ex);
+                _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
             }
         }
         #endregion
@@ -328,7 +338,7 @@ namespace SMSGateway.SMPPClient
             }
             catch(Exception ex)
             {
-                _logger.LogCritical(ex.Message, ex);
+                _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
             }
             return null;
         }
@@ -350,39 +360,53 @@ namespace SMSGateway.SMPPClient
         {
             try
             {
-                new BulksSmsManager()
-                    .SaveSentSms(
-                        sent_sms_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        send_sms_s1_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        send_sms_p1_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        send_sms_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        //sms_campaign_head_details_id: Convert.ToInt64(submitSmEventArgs.RefId),
-                        sms_campaign_head_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_head_details_id", 0),
-                        sms_campaign_details_id: (long) GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_details_id", 0),
-                        smpp_user_details_id: (int) GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "smpp_user_details_id", 0),
-                        message: Utility.RemoveApostropy(Encoding.UTF8.GetString(submitSmEventArgs.Message)),
-                        senderid: submitSmEventArgs.SourceAddress,
-                        enitityid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
-                        templateid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
-                        destination: submitSmEventArgs.DestAddress,
-                        piority: submitSmEventArgs.PriorityFlag,
-                        coding: submitSmEventArgs.DataCoding,
-                        smsc_details_id: connection.MC.Operator,
-                        create_date: DateTime.Now,
-                        status: "SENT",
-                        dlt_cost: connection.MC.DLTCost.ToString("0.000"),
-                        sms_cost: connection.MC.SubmitCost.ToString("0.000"),
-                        p1_move_date: DateTime.Now,
-                        s1_move_date: DateTime.Now,
-                        move_date: DateTime.Now,
-                        pdu_id: "",
-                        sequence_id: submitSmEventArgs.Sequence.ToString(),
-                        message_id: submitSmRespEvent.MessageID
-                    ).Wait();
+                Task.Run(async () => {
+
+                    decimal dlt_cost = (Decimal)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "dlt_cost", connection.MC.DLTCost);
+                    decimal sms_cost = (Decimal)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_cost", connection.MC.SubmitCost);
+
+                    await new BulksSmsManager()
+                        .SaveSentSms(
+                            sent_sms_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                            send_sms_s1_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                            send_sms_p1_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                            send_sms_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                            //sms_campaign_head_details_id: Convert.ToInt64(submitSmEventArgs.RefId),
+                            sms_campaign_head_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_head_details_id", 0),
+                            sms_campaign_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_details_id", 0),
+                            smpp_user_details_id: (int)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "smpp_user_details_id", 0),
+                            message: Utility.RemoveApostropy(Encoding.UTF8.GetString(submitSmEventArgs.Message)),
+                            senderid: submitSmEventArgs.SourceAddress,
+                            enitityid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
+                            templateid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
+                            destination: submitSmEventArgs.DestAddress,
+                            piority: submitSmEventArgs.PriorityFlag,
+                            coding: submitSmEventArgs.DataCoding,
+                            smsc_details_id: connection.MC.Operator,
+                            create_date: DateTime.Now.ToLocalTime(),
+                            status: "SENT",
+                            dlt_cost: dlt_cost.ToString("0.000"),
+                            sms_cost: sms_cost.ToString("0.000"),
+                            p1_move_date: DateTime.Now.ToLocalTime(),
+                            s1_move_date: DateTime.Now.ToLocalTime(),
+                            move_date: DateTime.Now.ToLocalTime(),
+                            pdu_id: "",
+                            sequence_id: submitSmEventArgs.Sequence.ToString(),
+                            message_id: submitSmRespEvent.MessageID
+                        );
+                })
+                .ContinueWith(task => { 
+                    if (task.IsFaulted)
+                    {
+                         var ex = task.Exception.InnerException != null ? task.Exception.InnerException : task.Exception;
+                        _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
+                    }
+                });
+
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex.Message, ex);
+                _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
             }
         }
         #endregion
@@ -420,20 +444,28 @@ namespace SMSGateway.SMPPClient
                         break;
                 }
 
-                new BulksSmsManager().SaveDeliveryReport(
-                    message_id: messageId,
-                    destination: e.From,
-                    sender: e.To,
-                    //sms_dlr_status_id: Utility.MessageDeliveryStatus(e.MessageState),
-                    sms_dlr_status_id: e.MessageState.ToString(),
-                    smsc_details_id: connection?.MC?.Operator,
-                    smpp_user_details_id: 0,
-                    message: String.Empty,
-                    submit_date: ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.SubmitDate, // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
-                    dlr_status_date: ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate, //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
-                    errorCode: dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
-                    shortmessage: e.TextString
-                ).Wait();
+                Task.Run(async() => {
+                    await new BulksSmsManager().SaveDeliveryReport(
+                        message_id: messageId,
+                        destination: e.From,
+                        sender: e.To,
+                        //sms_dlr_status_id: Utility.MessageDeliveryStatus(e.MessageState),
+                        sms_dlr_status_id: e.MessageState.ToString(),
+                        smsc_details_id: connection?.MC?.Operator,
+                        smpp_user_details_id: 0,
+                        message: String.Empty,
+                        submit_date: (ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.SubmitDate).ToLocalTime(), // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                        dlr_status_date: (ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate).ToLocalTime(), //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                        errorCode: dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
+                        shortmessage: e.TextString
+                    );
+                }).ContinueWith(task => {
+                    if (task.IsFaulted)
+                    {
+                        var ex = task.Exception.InnerException != null ? task.Exception.InnerException : task.Exception;
+                        _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
+                    }
+                });
 
                 _logger.LogTrace(JsonConvert.SerializeObject(e), e);
                 return StatusCodes.ESME_ROK;

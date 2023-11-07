@@ -13,7 +13,8 @@ namespace SMSGateway.SMPPClient
 
         public DatabaseSettings DatabaseSettings { get; set; }
         public KernelParameterOptions KernelParameters { get; set; }
-    }
+        public Dictionary<string, Dictionary<string, Dictionary<byte, string[]>>[]>[] DeliveryGenerateParams { get; set; }
+}
 
     public class DatabaseSettings
     {

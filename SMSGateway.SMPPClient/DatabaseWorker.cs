@@ -84,7 +84,7 @@ namespace SMSGateway.SMPPClient
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex.Message, ex);
+                    _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
                 }
                 _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Finish");
 
@@ -144,10 +144,12 @@ namespace SMSGateway.SMPPClient
                     List<SmsMessage> sm = Messages.Take(smppOperator, count).ToList();
 
                     await new BulksSmsManager().UpdateSendSmsById(sm.Select(x => Convert.ToInt64(x.RefId)).ToList(), "NEW")
-                        .ContinueWith(task =>
-                        {
+                        .ContinueWith(task => {
                             if (task.IsFaulted)
-                                _logger.LogCritical(task.Exception?.Message, JsonConvert.SerializeObject(task.Exception));
+                            {
+                                var ex = task.Exception.InnerException != null ? task.Exception.InnerException : task.Exception;
+                                _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
+                            }
                         });
                 }
                 catch (Exception ex)

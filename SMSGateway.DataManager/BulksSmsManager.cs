@@ -39,7 +39,7 @@ namespace SMSGateway.DataManager
         {
             string query = $"SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; " +
               $"SELECT destination, coding, message, senderid, enitityid, send_sms_id, " +
-              $"templateid, piority, status, operator, retry_count, " +
+              $"templateid, piority, status, operator, retry_count, dlt_cost, sms_cost, " +
               $"sms_campaign_head_details_id, sms_campaign_details_id, smpp_user_details_id " +
               $"FROM send_sms WHERE status = @status; ";
             //$"AND operator = '$operator'"; 
@@ -75,6 +75,9 @@ namespace SMSGateway.DataManager
                     m.AdditionalData["sms_campaign_head_details_id"] = row.Field<Int64>("sms_campaign_head_details_id");
                     m.AdditionalData["sms_campaign_details_id"] = row.Field<Int64>("sms_campaign_details_id");
                     m.AdditionalData["smpp_user_details_id"] = row.Field<Int32>("smpp_user_details_id");
+                    m.AdditionalData["dlt_cost"] = row.Field<Decimal?>("dlt_cost");
+                    m.AdditionalData["sms_cost"] = row.Field<Decimal?>("sms_cost");
+
                     messages.Add(m);
                 }
             }
