@@ -445,6 +445,52 @@ namespace SMSGateway.SMPPClient
                 }
 
                 Task.Run(async() => {
+                    // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+
+                    DateTime submit_date = ReferenceEquals(e.SubmitDate, null)
+                        ? new DateTime(1970, 1, 1)
+                        : (DateTime)e.SubmitDate;
+
+                    //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                    DateTime dlr_status_date = ReferenceEquals(e.DoneDate, null)
+                        ? new DateTime(1970, 1, 1)
+                        : (DateTime)e.DoneDate;
+
+                    if (connection.MC.DLRInUTC)
+                    {
+                        //TimeZoneInfo ist = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+                        TimeZoneInfo localTz = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.StandardName);
+
+                        submit_date = new DateTime(
+                                submit_date.Year,
+                                submit_date.Month,
+                                submit_date.Day,
+                                submit_date.Hour,
+                                submit_date.Minute,
+                                submit_date.Second,
+                                submit_date.Millisecond,
+                                submit_date.Microsecond,
+                                DateTimeKind.Utc
+                            );
+
+                        submit_date = TimeZoneInfo.ConvertTime(submit_date, TimeZoneInfo.Utc, localTz);
+
+                        dlr_status_date = new DateTime(
+                                dlr_status_date.Year,
+                                dlr_status_date.Month,
+                                dlr_status_date.Day,
+                                dlr_status_date.Hour,
+                                dlr_status_date.Minute,
+                                dlr_status_date.Second,
+                                dlr_status_date.Millisecond,
+                                dlr_status_date.Microsecond,
+                                DateTimeKind.Utc
+                            );
+
+                        dlr_status_date = TimeZoneInfo.ConvertTime(dlr_status_date, TimeZoneInfo.Utc, localTz);
+                    }
+
+
                     await new BulksSmsManager().SaveDeliveryReport(
                         message_id: messageId,
                         destination: e.From,
@@ -454,8 +500,10 @@ namespace SMSGateway.SMPPClient
                         smsc_details_id: connection?.MC?.Operator,
                         smpp_user_details_id: 0,
                         message: String.Empty,
-                        submit_date: (ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.SubmitDate).ToLocalTime(), // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
-                        dlr_status_date: (ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate).ToLocalTime(), //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                        //submit_date: (ReferenceEquals(e.SubmitDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.SubmitDate).ToLocalTime(), // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                        //dlr_status_date: (ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate).ToLocalTime(), //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
+                        submit_date: submit_date,
+                        dlr_status_date: dlr_status_date,
                         errorCode: dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
                         shortmessage: e.TextString
                     );

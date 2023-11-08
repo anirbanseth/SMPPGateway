@@ -306,6 +306,7 @@ namespace SMSGateway.SMSCClient
         public int MaxRetry { get; set; }
         public int Instances { get; set; }
         public string MessageIdType { get; set; }
+        public bool DLRInUTC { get; set; }
 
         public SMSC Clone()
         {

@@ -138,7 +138,8 @@
         "dltcost": 0.01,
         "submitcost": 0.1,
         "maxqueue": 5000,
-        "maxretry": 4
+        "maxretry": 4,
+        "dlrinutc": false
       }
 
     ]
