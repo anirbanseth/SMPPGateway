@@ -49,6 +49,7 @@ namespace SMSGateway.SMPPClient
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Start");
+            bool lastExecutionComplete = true;
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -57,19 +58,42 @@ namespace SMSGateway.SMPPClient
 
                     List<string> activeOperators = SmppConnectionManager.GetActiveOperatorsWithAvailableQueue();
 
-                    _logger.LogDebug($"DatabaseWorker_ExecuteAsync :: Active operators { (!activeOperators.Any() ? "NONE" : String.Join(",", activeOperators)) }");
+                    _logger.LogDebug($"DatabaseWorker_ExecuteAsync :: Active operators {(!activeOperators.Any() ? "NONE" : String.Join(",", activeOperators))}");
 
                     if (ReferenceEquals(activeOperators, null) || !activeOperators.Any())
                         throw new DataMisalignedException("No active SMPP connections");
-                    
-                    _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Marking as PRO");
-                    await new BulksSmsManager().MarkMessages("NEW", activeOperators, "PRO");
 
-                    _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Reading PRO");
-                    List<SmsMessage> messages = await new BulksSmsManager().GetMarkedMessages("PRO");
+                    // don't pickup any message is message tagging failed in last attempt
+                    // added on 11-Nob-2023
+                    List<SmsMessage> messages = new List<SmsMessage>();
+                    if (lastExecutionComplete)
+                    {
+                        _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Marking as PRO");
+                        int markedRecordCount = await new BulksSmsManager().MarkMessages("NEW", activeOperators, "PRO");
+
+                        if (markedRecordCount == 0)
+                            continue;
+
+                        _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Reading PRO");
+                        messages = await new BulksSmsManager().GetMarkedMessages("PRO");
+
+                        if (messages.Count == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        _logger.LogDebug("DatabaseWorker_ExecuteAsync :: last execution failed, not marking as PRO, no message picked");
+                    }
+
+                    // end don't pickup any message is message tagging failed in last attempt
 
                     _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Marking as INP");
-                    await new BulksSmsManager().MarkMessages("PRO", activeOperators, "INP");
+                    int updatedRecordCount = await new BulksSmsManager().MarkMessages("PRO", activeOperators, "INP");
+
+                    if (updatedRecordCount == 0)
+                        continue;
+
+                    lastExecutionComplete = true;
 
                     _logger.LogDebug($"DatabaseWorker_ExecuteAsync :: Distributing {messages.Count} messages");
                     foreach (var message in messages)
@@ -84,6 +108,7 @@ namespace SMSGateway.SMPPClient
                 }
                 catch (Exception ex)
                 {
+                    lastExecutionComplete = false;
                     _logger.LogCritical(ex.Message, JsonConvert.SerializeObject(ex));
                 }
                 _logger.LogDebug("DatabaseWorker_ExecuteAsync :: Finish");
