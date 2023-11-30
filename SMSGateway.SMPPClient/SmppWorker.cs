@@ -375,7 +375,7 @@ namespace SMSGateway.SMPPClient
                             sms_campaign_head_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_head_details_id", 0),
                             sms_campaign_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_details_id", 0),
                             smpp_user_details_id: (int)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "smpp_user_details_id", 0),
-                            message: Utility.RemoveApostropy(Encoding.UTF8.GetString(submitSmEventArgs.Message)),
+                            message: Encoding.UTF8.GetString(submitSmEventArgs.Message),
                             senderid: submitSmEventArgs.SourceAddress,
                             enitityid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
                             templateid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),

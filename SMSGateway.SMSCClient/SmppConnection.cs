@@ -2723,6 +2723,8 @@ namespace SMSGateway.SMSCClient
             {
                 messageId += (char) args.PDU[pos++];
             }
+            if (args.PDU[pos] == '\0' && pos < args.PDU.Length)
+                pos++;
             // read tlv parameters
             if (pos < args.PDU.Length)
                 tlvParams = decodeTlvParams(args.PDU, pos);
@@ -3920,7 +3922,7 @@ namespace SMSGateway.SMSCClient
                 /// 
                 byte[] _receipted_message_id = new byte[254];
                 byte _receipted_message_id_len = 0;
-                byte _message_state = 0;
+                byte _message_state = 255;
                 Int16 sar_msg_ref_num = 0;
                 byte sar_total_segments = 0;
                 byte sar_segment_seqnum = 0;
@@ -4194,6 +4196,8 @@ namespace SMSGateway.SMSCClient
                     isDeliveryReceipt = true;
                     try
                     {
+                        if (_message_state == 255 || _receipted_message_id_len == 0)
+                            throw new InvalidDataException("Invalid Message State or message id");
                         messageState = _message_state;
                         if (_receipted_message_id_len > 0)
                             receiptedMessageID = Encoding.ASCII.GetString(_receipted_message_id, 0, _receipted_message_id_len - 1); ;
