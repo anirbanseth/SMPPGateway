@@ -390,7 +390,7 @@ namespace SMSGateway.SMPPClient
                             p1_move_date: DateTime.Now.ToLocalTime(),
                             s1_move_date: DateTime.Now.ToLocalTime(),
                             move_date: DateTime.Now.ToLocalTime(),
-                            pdu_id: "",
+                            pdu_id: connection.MC.Instance,
                             sequence_id: submitSmEventArgs.Sequence.ToString(),
                             message_id: submitSmRespEvent.MessageID
                         );
