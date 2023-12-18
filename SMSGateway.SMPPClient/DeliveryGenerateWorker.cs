@@ -313,7 +313,8 @@ namespace SMSGateway.SMPPClient
                         submit_date: submit_date, // ReferenceEquals(e.SubmitDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.SubmitDate).ToString("dd-MMM-yyyy HH:mm:ss"),
                         dlr_status_date: DateTime.Now, // ReferenceEquals(e.DoneDate, null) ? new DateTime(2000, 1, 1) : (DateTime)e.DoneDate, //ReferenceEquals(e.DoneDate, null) ? "01-Jan-1970 00:00:00" : ((DateTime)e.DoneDate).ToString("dd-MMM-yyyy HH:mm:ss"),
                         errorCode: error_code, //dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
-                        shortmessage: (message_text?.Length > 50 ? message_text.Substring(0, 50) : message_text)
+                        shortmessage: (message_text?.Length > 50 ? message_text.Substring(0, 50) : message_text),
+                        create_date: DateTime.Now.ToLocalTime()
                     );
 
                 #endregion

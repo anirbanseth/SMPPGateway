@@ -230,8 +230,8 @@ namespace SMSGateway.DataManager
                 DateTime? submit_date,
                 DateTime? dlr_status_date,
                 string errorCode,
-                string shortmessage
-
+                string shortmessage,
+                DateTime create_date
             )
         {
             //string query = $"INSERT INTO sms_dlr_all_status (" +
@@ -245,10 +245,10 @@ namespace SMSGateway.DataManager
 
             string query = $"INSERT INTO sms_dlr_all_status (" +
                 $"message_id,destination,sender,sms_dlr_status_id," +
-                $"smsc_details_id,smpp_user_details_id,message,submit_date,dlr_status_date,errorCode,shortmessage" +
+                $"smsc_details_id,smpp_user_details_id,message,submit_date,dlr_status_date,errorCode,shortmessage, saved_on" +
                 $") VALUES (" +
                 $"@message_id, @destination, @sender, @sms_dlr_status_id," +
-                $"@smsc_details_id,@smpp_user_details_id, @message, @submit_date, @dlr_status_date, @errorCode, @shortmessage" +
+                $"@smsc_details_id,@smpp_user_details_id, @message, @submit_date, @dlr_status_date, @errorCode, @shortmessage, @saved_on" +
                 $");";
 
             MySqlDbManager db = new MySqlDbManager(query, true);
@@ -263,6 +263,7 @@ namespace SMSGateway.DataManager
             db.AddTimeStampPara("dlr_status_date", dlr_status_date);
             db.AddVarcharPara("errorCode", 200, errorCode);
             db.AddVarcharPara("shortmessage", -1, shortmessage);
+            db.AddDateTimePara("saved_on", create_date);
             await db.RunActionQueryAsync();
 
         }

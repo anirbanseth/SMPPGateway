@@ -505,7 +505,8 @@ namespace SMSGateway.SMPPClient
                         submit_date: submit_date,
                         dlr_status_date: dlr_status_date,
                         errorCode: dictionaryText.ContainsKey("err") ? dictionaryText["err"] : String.Empty,
-                        shortmessage: e.TextString
+                        shortmessage: e.TextString,
+                        create_date: DateTime.Now.ToLocalTime()
                     );
                 }).ContinueWith(task => {
                     if (task.IsFaulted)

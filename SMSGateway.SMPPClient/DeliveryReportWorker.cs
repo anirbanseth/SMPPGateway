@@ -24,7 +24,14 @@ namespace SMSGateway.SMPPClient
             while (!stoppingToken.IsCancellationRequested)
             {
                 _logger.LogDebug("DeliveryReportWorker :: Starting");
-                new BulksSmsManager().ProcessDeliveryReport().Wait();
+                try
+                {
+                    new BulksSmsManager().ProcessDeliveryReport().Wait();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.Message, ex);
+                }
                 _logger.LogDebug("DeliveryReportWorker :: Complete");
                 try
                 {
