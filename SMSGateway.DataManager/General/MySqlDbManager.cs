@@ -613,6 +613,43 @@ namespace SMSGateway.DataManager.General
         }
         #endregion
 
+        #region Type: LongText
+        /// <summary>
+        /// Adds a Varchar type input query parameter.
+        /// </summary>
+        /// <param name="Name">Name of the parameter.</param>
+        /// <param name="Size">Size of the parameter.</param>
+        /// <param name="Value">Value of the parameter.</param>
+        public void AddLongTextPara(string Name, int Size, string Value)
+        {
+            AddLongTextPara(Name, Size, Value, QueryParameterDirection.Input);
+        }
+
+        /// <summary>
+        /// Adds a Varchar type query parameter with
+        /// the given direction type. 
+        /// </summary>
+        /// <param name="Name">Name of the parameter.</param>
+        /// <param name="Size">Size of the parameter.</param>
+        /// <param name="Value">Value of the parameter.</param>
+        /// <param name="Direction">Parameter Direction: Input/ Output/ Return</param>
+        public void AddLongTextPara(string Name, int Size, string Value, QueryParameterDirection Direction)
+        {
+            object oValue = Value;
+            if (Value == null)
+            {
+                oValue = DBNull.Value;
+            }
+            else if (Value.Length == 0)
+            {
+                oValue = DBNull.Value;
+            }
+            MySqlParameter oPara = new MySqlParameter(Name, MySqlDbType.LongText, Size);
+            oPara.Direction = GetParaType(Direction);
+            oPara.Value = oValue;
+            oParameters.Add(oPara);
+        }
+        #endregion
         #region Type: Boolean
         /// <summary>
         /// Adds a Blob type input query parameter.

@@ -231,7 +231,10 @@ namespace SMSGateway.SMPPClient
                     move_date: DateTime.Now.ToLocalTime(),
                     pdu_id: "",
                     sequence_id: new Random().Next(Int32.MaxValue).ToString(),
-                    message_id: message_id
+                    message_id: message_id, 
+                    smpp_instance : "0", 
+                    retry_index: 0,
+                    sms_cost_mode: (string)GetAdditionalParameterValue(message.AdditionalData, "sms_cost_mode", 0)
                 );
                 #endregion
 

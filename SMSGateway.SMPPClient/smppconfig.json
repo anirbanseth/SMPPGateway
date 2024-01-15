@@ -3,7 +3,7 @@
     "databasesettings": {
       "databasetype": "mysql",
       //"connectionstring": "server=127.0.0.1;uid=root;pwd=P@ssw0rd;database=bulksms",
-      "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms"
+      "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms;Charset=utf8;"
     },
     "kernelparameters": {
       "maxbuffersize": 1048576, // 1MB
@@ -119,7 +119,7 @@
         },*/
       {
         "smstype": "T",
-        "operator": "PRO_PNG_TSP",
+        "operator": "PRO_PNG_TST",
         "instances": 1,
         "host": "smpp3.infobip.com",
         "port": 8888,
@@ -131,7 +131,7 @@
         "addrnpi": 0,
         "addressrange": "",
         "defaultencoding": "DEFAULT",
-        "deliverydateformat": "yyMMddHHmmss",
+        "deliverydateformat": "yyMMddHHmm",
         // STRING, INT_INT, INT_HEX, HEX_INT, HEX_HEX
         "messageidtype": "STRING",
         "tps": 100,

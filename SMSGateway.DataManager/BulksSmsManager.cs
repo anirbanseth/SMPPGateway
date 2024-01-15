@@ -40,7 +40,8 @@ namespace SMSGateway.DataManager
             string query = $"SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED ; " +
               $"SELECT destination, coding, message, senderid, enitityid, send_sms_id, " +
               $"templateid, piority, status, operator, retry_count, dlt_cost, sms_cost, " +
-              $"sms_campaign_head_details_id, sms_campaign_details_id, smpp_user_details_id " +
+              $"sms_campaign_head_details_id, sms_campaign_details_id, smpp_user_details_id, " +
+              $"sms_cost_mode " +
               $"FROM send_sms WHERE status = @status; ";
             //$"AND operator = '$operator'"; 
 
@@ -77,7 +78,7 @@ namespace SMSGateway.DataManager
                     m.AdditionalData["smpp_user_details_id"] = row.Field<Int32>("smpp_user_details_id");
                     m.AdditionalData["dlt_cost"] = row.Field<Decimal?>("dlt_cost");
                     m.AdditionalData["sms_cost"] = row.Field<Decimal?>("sms_cost");
-
+                    m.AdditionalData["sms_cost_mode"] = row.Field<string>("sms_cost_mode");
                     messages.Add(m);
                 }
             }
@@ -174,18 +175,21 @@ namespace SMSGateway.DataManager
             DateTime move_date,
             string pdu_id,
             string sequence_id,
-            string message_id
+            string message_id,
+            string smpp_instance,
+            int retry_index,
+            string sms_cost_mode
         )
         {
             string query = $"INSERT INTO sent_sms( " +
                 $" send_sms_s1_id, send_sms_p1_id, send_sms_id, sms_campaign_head_details_id, sms_campaign_details_id " +
                 $", smpp_user_details_id, message, senderid, enitityid, templateid, destination, piority, coding, smsc_details_id " +
                 $", create_date, status, dlt_cost, sms_cost, p1_move_date, s1_move_date, move_date, pdu_id, sequence_id, message_id " +
-                $")VALUES(" +
+                $", smpp_instance, retry_index, sms_cost_mode)VALUES(" +
                 $" @send_sms_s1_id, @send_sms_p1_id, @send_sms_id, @sms_campaign_head_details_id, @sms_campaign_details_id " +
                 $", @smpp_user_details_id, @message, @senderid, @enitityid, @templateid, @destination, @piority, @coding, @smsc_details_id " +
                 $", @create_date, @status, @dlt_cost, @sms_cost, @p1_move_date, @s1_move_date, @move_date, @pdu_id, @sequence_id, @message_id " +
-                $")";
+                $", @smpp_instance, @retry_index, @sms_cost_mode)";
 
             MySqlDbManager db = new MySqlDbManager(query, true);
             db.AddIntegerBigPara("sent_sms_id", sent_sms_id);
@@ -195,7 +199,7 @@ namespace SMSGateway.DataManager
             db.AddIntegerBigPara("sms_campaign_head_details_id", sms_campaign_head_details_id);
             db.AddIntegerBigPara("sms_campaign_details_id", sms_campaign_details_id);
             db.AddIntegerPara("smpp_user_details_id", smpp_user_details_id);
-            db.AddVarcharPara("message", -1, message);
+            db.AddLongTextPara("message", -1, message);
             db.AddVarcharPara("senderid", 200, senderid);
             db.AddVarcharPara("enitityid", 200, enitityid);
             db.AddVarcharPara("templateid", 200, templateid);
@@ -213,6 +217,10 @@ namespace SMSGateway.DataManager
             db.AddVarcharPara("pdu_id", 50, pdu_id);
             db.AddVarcharPara("sequence_id", 50, sequence_id);
             db.AddVarcharPara("message_id", 50, message_id);
+            db.AddVarcharPara("smpp_instance", 50, smpp_instance);
+            db.AddIntegerPara("retry_index", retry_index);
+            db.AddVarcharPara("sms_cost_mode", 1, sms_cost_mode);
+
             await db.RunActionQueryAsync();
 
         }

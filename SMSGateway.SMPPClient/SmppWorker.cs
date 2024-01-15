@@ -237,7 +237,20 @@ namespace SMSGateway.SMPPClient
                     else
                     {
                         m.RetryIndex++;
-                        Messages.Enqueue(m.Operator, m);
+                        //Messages.Enqueue(m.Operator, m);
+
+                        decimal dlt_cost = (Decimal)GetAdditionalParameterValue(m.AdditionalData, "dlt_cost", connection.MC.DLTCost);
+                        decimal sms_cost = (Decimal)GetAdditionalParameterValue(m.AdditionalData, "sms_cost", connection.MC.SubmitCost);
+
+                        await new BulksSmsManager()
+                            .UpdateSendSms(
+                                Convert.ToInt64(m.RefId),
+                                "NEW",
+                                m.RetryIndex,
+                                $"{connection.MC.Operator}_{connection.MC.Instance}",
+                                dlt_cost,
+                                sms_cost * 1
+                            );
                     }
 
                     await Task.Delay(delay * count, stoppingToken);
@@ -360,10 +373,19 @@ namespace SMSGateway.SMPPClient
         {
             try
             {
+                byte[] utf8message;
+
+                
+
                 Task.Run(async () => {
 
                     decimal dlt_cost = (Decimal)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "dlt_cost", connection.MC.DLTCost);
                     decimal sms_cost = (Decimal)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_cost", connection.MC.SubmitCost);
+
+                    if (submitSmEventArgs.DataCoding == 8)
+                        utf8message = Encoding.Convert(Encoding.BigEndianUnicode, Encoding.UTF8, submitSmEventArgs.Message);
+                    else
+                        utf8message = submitSmEventArgs.Message;
 
                     await new BulksSmsManager()
                         .SaveSentSms(
@@ -375,7 +397,8 @@ namespace SMSGateway.SMPPClient
                             sms_campaign_head_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_head_details_id", 0),
                             sms_campaign_details_id: (long)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_campaign_details_id", 0),
                             smpp_user_details_id: (int)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "smpp_user_details_id", 0),
-                            message: Encoding.UTF8.GetString(submitSmEventArgs.Message),
+                            //message: submitSmEventArgs.DataCoding == 8 ? Encoding.BigEndianUnicode.GetString(submitSmEventArgs.Message) : Encoding.UTF8.GetString(submitSmEventArgs.Message),
+                            message: Encoding.UTF8.GetString(utf8message),
                             senderid: submitSmEventArgs.SourceAddress,
                             enitityid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
                             templateid: submitSmEventArgs.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => Encoding.ASCII.GetString(x.Value)).FirstOrDefault(),
@@ -390,9 +413,12 @@ namespace SMSGateway.SMPPClient
                             p1_move_date: DateTime.Now.ToLocalTime(),
                             s1_move_date: DateTime.Now.ToLocalTime(),
                             move_date: DateTime.Now.ToLocalTime(),
-                            pdu_id: connection.MC.Instance,
+                            pdu_id: "0",
                             sequence_id: submitSmEventArgs.Sequence.ToString(),
-                            message_id: submitSmRespEvent.MessageID
+                            message_id: submitSmRespEvent.MessageID,
+                            smpp_instance: connection.MC.Instance,
+                            retry_index : submitSmEventArgs.RetryIndex,
+                            sms_cost_mode : (string)GetAdditionalParameterValue(submitSmEventArgs.AdditionalParameters, "sms_cost_mode", 0)
                         );
                 })
                 .ContinueWith(task => { 
