@@ -6,6 +6,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Org.BouncyCastle.Asn1;
 using SMSGateway.DataManager.General;
 using SMSGateway.Entity;
 
@@ -148,6 +149,126 @@ namespace SMSGateway.DataManager
         //}
         #endregion
 
+        #region [ Save Send SMS ]
+        public async Task<ulong> SaveSendSms(
+            //long send_sms_id,
+            long? sms_campaign_head_details_id,
+            long? sms_campaign_details_id,
+            int? smpp_user_details_id,
+            string message,
+            string senderid,
+            string? enitityid,
+            string? templateid,
+            long destination,
+            int piority,
+            string? message_id,
+            long? submit_sms_id,
+            int coding,
+            int? smsc_details_id,
+            DateTime create_date,
+            string status,
+            decimal dlt_cost,
+            decimal sms_cost,
+            int? serial_number,
+            string @operator,
+            string smpp,
+            string from,
+            int? session_id,
+            int retry_count,
+            char? sms_cost_mode,
+            string source
+        )
+        {
+            string query = $"insert into send_sms (" +
+                //$"send_sms_id, " +
+                $"sms_campaign_head_details_id, " +
+                $"sms_campaign_details_id, " +
+                $"smpp_user_details_id, " +
+                $"message, " +
+                $"senderid, " +
+                $"enitityid, " +
+                $"templateid, " +
+                $"destination, " +
+                $"piority, " +
+                $"message_id, " +
+                $"submit_sms_id, " +
+                $"coding, " +
+                $"smsc_details_id, " +
+                $"create_date, " +
+                $"status, " +
+                $"dlt_cost, " +
+                $"sms_cost, " +
+                $"serial_number, " +
+                $"operator, " +
+                $"smpp, " +
+                $"`from`, " +
+                $"session_id, " +
+                $"retry_count, " +
+                $"sms_cost_mode, " +
+                $"source" +
+                $") values (" +
+                //$"@send_sms_id, " +
+                $"@sms_campaign_head_details_id, " +
+                $"@sms_campaign_details_id, " +
+                $"@smpp_user_details_id, " +
+                $"@message, senderid, " +
+                $"@enitityid, " +
+                $"@templateid, " +
+                $"@destination, " +
+                $"@piority, " +
+                $"@message_id, " +
+                $"@submit_sms_id, " +
+                $"@coding, " +
+                $"@smsc_details_id, " +
+                $"@create_date, " +
+                $"@status, " +
+                $"@dlt_cost, " +
+                $"@sms_cost, " +
+                $"@serial_number, " +
+                $"@operator, " +
+                $"@smpp, " +
+                $"@from, " +
+                $"@session_id, " +
+                $"@retry_count, " +
+                $"@sms_cost_mode, " +
+                $"@source" +
+                $"); select LAST_INSERT_ID() ;";
+
+            MySqlDbManager db = new MySqlDbManager(query, true);
+            //db.AddIntegerBigPara("send_sms_id", send_sms_id);
+            db.AddIntegerBigPara("sms_campaign_head_details_id", sms_campaign_head_details_id);
+            db.AddIntegerBigPara("sms_campaign_details_id", sms_campaign_details_id);
+            db.AddIntegerPara("smpp_user_details_id", smpp_user_details_id);
+            db.AddVarcharPara("message", 1000, message);
+            db.AddVarcharPara("senderid", 10, senderid);
+            db.AddVarcharPara("enitityid", 200, enitityid);
+            db.AddVarcharPara("templateid", 200, templateid);
+            db.AddIntegerBigPara("destination", destination);
+            db.AddIntegerPara("piority", piority);
+            db.AddVarcharPara("message_id", 255, message_id);
+            db.AddIntegerBigPara("submit_sms_id", submit_sms_id);
+            db.AddIntegerPara("coding", coding);
+            db.AddIntegerPara("smsc_details_id", smsc_details_id);
+            db.AddDateTimePara("create_date", create_date);
+            db.AddVarcharPara("status", 20, status);
+            db.AddDecimalPara("dlt_cost", 10, 5, dlt_cost);
+            db.AddDecimalPara("sms_cost", 10, 5, sms_cost);
+            db.AddIntegerPara("serial_number", serial_number);
+            db.AddVarcharPara("operator", 20, @operator);
+            db.AddVarcharPara("smpp", 20, smpp);
+            db.AddVarcharPara("from", 20, from);
+            db.AddIntegerPara("session_id", session_id);
+            db.AddIntegerPara("retry_count", retry_count);
+            db.AddCharPara("sms_cost_mode", 1, sms_cost_mode);
+            db.AddVarcharPara("source", 3, source);
+            DataTable dataTable = await db.GetTableAsync();
+
+            if (!ReferenceEquals(dataTable, null))
+                return (ulong)dataTable.Rows[0][0];
+
+            return 0;
+        }
+        #endregion
 
         #region [ Save Sent Sms ]
         public async Task SaveSentSms(

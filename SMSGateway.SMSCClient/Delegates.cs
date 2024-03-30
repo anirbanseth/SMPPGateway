@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using SMSGateway.Tools;
@@ -47,7 +48,9 @@ namespace SMSGateway.SMSCClient
     public class SessionEventArgs : EventArgs
     {
         public Guid Id { get; set; }
-        public string Address { get; set; }
+        public string FullAddress { get; set; }
+        public IPAddress Address { get; set; }
+        public int Port { get; set; }
         public long ReceivedCount { get; set; }
         public long SentCount { get; set; }
     }
@@ -573,7 +576,7 @@ namespace SMSGateway.SMSCClient
         }
 
 
-        public SmppDelivery Data { get; set; }
+        public SmppDeliveryData Data { get; set; }
         public int SentStatus { get; set; }
 
         public new void Dispose()

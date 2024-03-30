@@ -10,11 +10,21 @@ namespace SMSGateway.SMPPClient
     public class SmppOptions
     {
         public SMSC[] Providers { get; set; }
+        public SmscServerOptions[] Servers { get; set; }
 
         public DatabaseSettings DatabaseSettings { get; set; }
         public KernelParameterOptions KernelParameters { get; set; }
         public Dictionary<string, Dictionary<string, Dictionary<byte, string[]>>[]>[] DeliveryGenerateParams { get; set; }
-}
+    }
+
+    public class SmscServerOptions
+    {
+        public string? Name { get; set; }
+        public int Port { get; set; }
+        public bool Secured { get;set; }
+        public string? DefaultEncoding { get; set; }
+        public int DeliveryRetry { get; set; }
+    }
 
     public class DatabaseSettings
     {

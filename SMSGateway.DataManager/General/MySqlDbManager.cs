@@ -8,6 +8,8 @@ using System.Diagnostics;
 using MySql.Data.MySqlClient;
 using System.Configuration;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
+using System.Xml.Linq;
 
 namespace SMSGateway.DataManager.General
 {
@@ -419,6 +421,10 @@ namespace SMSGateway.DataManager.General
         #endregion
 
         #region Type: Bigint
+        public void AddIntegerBigPara(string Name, ulong Value)
+        {
+            AddIntegerBigPara(Name, (long) Value, QueryParameterDirection.Input);
+        }
         /// <summary>
         /// Adds an Integer type input query parameter.
         /// </summary>
@@ -433,6 +439,10 @@ namespace SMSGateway.DataManager.General
         /// </summary>
         /// <param name="Name">Name of the parameter.</param>
         /// <param name="Value">Value of the parameter.</param>
+        public void AddIntegerBigPara(string Name, ulong? Value)
+        {
+            AddIntegerBigPara(Name, (long?) Value, QueryParameterDirection.Input);
+        }
         public void AddIntegerBigPara(string Name, long? Value)
         {
             AddIntegerBigPara(Name, Value, QueryParameterDirection.Input);

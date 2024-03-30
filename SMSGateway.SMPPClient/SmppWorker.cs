@@ -12,16 +12,16 @@ using System.Text.Json.Serialization;
 
 namespace SMSGateway.SMPPClient
 {
-    public class SmppWorker : BackgroundService
+    public class SmppClientWorker : BackgroundService
     {
-        private readonly ILogger<SmppWorker> _logger;
+        private readonly ILogger<SmppClientWorker> _logger;
         //public static List<SMPPConnection> connections = new List<SMPPConnection>();
         IConfiguration Configuration = null;
         SmppOptions options = null;
         SortedList activeConnections = SortedList.Synchronized(new SortedList());
 
         #region [ Constructor ]
-        public SmppWorker(ILogger<SmppWorker> logger)
+        public SmppClientWorker(ILogger<SmppClientWorker> logger)
         {
             _logger = logger;
 
@@ -44,6 +44,9 @@ namespace SMSGateway.SMPPClient
             //    .GetSection("clients")
             //    .Get<Dictionary<string, object>>();
             //string json = JsonConvert.SerializeObject(settings);
+
+            if (ReferenceEquals(options.Providers, null))
+                return;
 
             foreach (SMSC smsc in options.Providers)
             {

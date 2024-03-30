@@ -20,11 +20,17 @@ NLog.LogManager.Configuration = new NLogLoggingConfiguration(Configuration.GetSe
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
-        services.AddHostedService<SmppWorker>();
+        #region [ Client ]
+        services.AddHostedService<SmppClientWorker>();
         services.AddHostedService<DatabaseWorker>();
         services.AddHostedService<GCWorker>();
-        services.AddHostedService<DeliveryReportWorker>();
-        services.AddHostedService<DeliveryGenerateWorker>();
+        //services.AddHostedService<DeliveryReportWorker>();
+        //services.AddHostedService<DeliveryGenerateWorker>();
+        #endregion
+
+        #region [ Server ]
+        services.AddHostedService<SmppServerWorker>();
+        #endregion
     })
     .ConfigureAppConfiguration(config => {
         config

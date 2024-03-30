@@ -10,6 +10,7 @@
   <ItemGroup>
     <Compile Remove="Constants.cs" />
     <Compile Remove="SMPPClient.cs" />
+    <Compile Remove="SmppDelivery.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="IPNetwork2" Version="3.0.667" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />

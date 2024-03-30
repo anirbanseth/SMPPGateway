@@ -3,7 +3,10 @@
     "databasesettings": {
       "databasetype": "mysql",
       //"connectionstring": "server=127.0.0.1;uid=root;pwd=P@ssw0rd;database=bulksms",
-      "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms;Charset=utf8;"
+      //"connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms;Charset=utf8;"
+      //"connectionstring": "server=127.0.0.1;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms;Charset=utf8;"
+      //"connectionstring": "server=172.105.47.47;uid=bulksms_test;pwd=bulksms_test@2024;database=bulksms_text;Charset=utf8;"
+      "connectionstring": "server=172.105.47.47;uid=bulksms;pwd=kUhsoz-cyhhem-pisgu6;database=bulksms_text;Charset=utf8;"
     },
     "kernelparameters": {
       "maxbuffersize": 1048576, // 1MB
@@ -117,6 +120,7 @@
           "maxqueue": 5000,
           "maxretry": 4
         },*/
+      /*
       {
         "smstype": "T",
         "operator": "PRO_PNG_TST",
@@ -141,7 +145,23 @@
         "maxretry": 4,
         "dlrinutc": false
       }
-
+*/
+    ],
+    "servers": [
+      {
+        "name": "smpp-sevrer",
+        "port": 8888,
+        "secured": false,
+        "defaultencoding": "DEFAULT",
+        "deliveryretry": 4
+      },
+      {
+        "name": "smpp-server-secured",
+        "port": 8887,
+        "secured": true,
+        "defaultencoding": "DEFAULT",
+        "deliveryretry": 4
+      }
     ]
   }
 }

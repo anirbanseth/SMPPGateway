@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -88,11 +89,11 @@ namespace SMSGateway.SMSCClient
         private object sendingDeliveryLock = new object();
         //private int sendingDelivery;
         //public Queue DeliveryQueue;
-        public ConcurrentQueue<SmppDelivery> DeliveryQueue;
+        public ConcurrentQueue<SmppDeliveryData> DeliveryQueue;
 
         //private object PendingDeliveryLock = new object();
         //private Dictionary<uint, SmppDelivery> PendingDelivery;
-        private ConcurrentDictionary<uint, SmppDelivery> PendingDelivery;
+        private ConcurrentDictionary<uint, SmppDeliveryData> PendingDelivery;
         //private SortedList PendingDelivery;
         private const int MaxDeliverySendingQueue = 100;
 
@@ -124,6 +125,11 @@ namespace SMSGateway.SMSCClient
             TcpClient tcpClient,
             string deliverySmDateFormat = "yyMMddHHmmss",
             SesionCreatedHandler onSessionStart = null,
+            SessionTerminatedHandler onSessionEnd = null,
+            BindEventHandler onClientBindRequested = null,
+            UnbindEventHandler onUnbind = null,
+            SubmitSmEventHandler onSubmitSm = null,
+            LogEventHandler onLog = null,
             //Func<Task> onSessionStart = null,
             SmppType smppType = SmppType.Server
         )
@@ -147,9 +153,9 @@ namespace SMSGateway.SMSCClient
             this.mustBeConnected = false;
 
             //this.DeliveryQueue = Queue.Synchronized(new Queue(1000));
-            this.DeliveryQueue = new ConcurrentQueue<SmppDelivery>();
+            this.DeliveryQueue = new ConcurrentQueue<SmppDeliveryData>();
             //this.PendingDelivery = new Dictionary<uint, SmppDelivery>();
-            this.PendingDelivery = new ConcurrentDictionary<uint, SmppDelivery>();
+            this.PendingDelivery = new ConcurrentDictionary<uint, SmppDeliveryData>();
             //this.PendingDelivery = SortedList.Synchronized(new SortedList());
             MessageBuilder = SortedList.Synchronized(new SortedList());
             //MessageBuilderHash = new List<KeyValuePair<ulong, DateTime>>();
@@ -199,24 +205,34 @@ namespace SMSGateway.SMSCClient
                 }
 
                 this.OnClientSessionStart = onSessionStart;
+                this.OnSessionEnd = onSessionEnd;
+                this.OnClientBindRequested = onClientBindRequested;
+                this.OnUnbind = onUnbind;
+                this.OnSubmitSm = onSubmitSm;
+                this.OnLog = onLog;
 
                 if (OnClientSessionStart != null)
                 {
                     //var pi = sslStream.GetType().GetProperty("Socket", BindingFlags.NonPublic | BindingFlags.Instance);
                     //var socketIp = ((Socket)pi.GetValue(sslStream, null)).RemoteEndPoint.ToString();
+                    IPEndPoint endPoint = (System.Net.IPEndPoint)tcpClient.Client.RemoteEndPoint;
                     SessionEventArgs session = new SessionEventArgs
                     {
                         Id = Guid.NewGuid(),
-                        Address = tcpClient.Client.RemoteEndPoint.ToString()
+                        FullAddress = tcpClient.Client.RemoteEndPoint.ToString(),
+                        Address = endPoint.Address,
+                        Port = endPoint.Port
                     };
                     //OnSessionStart(this, session);
                     logMessage(LogLevels.LogSteps, String.Format("Creating Connection {0} :: Instance {1}", session.Id, ConnectionNumber));
                     connectionState = ConnectionStates.SMPP_SOCKET_CONNECT_SENT;
                     //OnSessionStart.BeginInvoke(this, session, onSessionStartEventComplete, session);
-                    foreach (Func<Task> handler in OnClientSessionStart.GetInvocationList())
-                    {
-                        handler.Invoke().Wait();
-                    }
+                    //foreach (Func<Task> handler in OnClientSessionStart.GetInvocationList())
+                    //{
+                    //    handler.Invoke().Wait();
+                    //}
+                    if (OnClientSessionStart != null)
+                        Task.Run(() => { OnClientSessionStart?.Invoke(this, session); });
                 }
                 //else
                 //{
@@ -265,9 +281,9 @@ namespace SMSGateway.SMSCClient
             this.mustBeConnected = true;
 
             //this.DeliveryQueue = Queue.Synchronized(new Queue(1000));
-            this.DeliveryQueue = new ConcurrentQueue<SmppDelivery>();
+            this.DeliveryQueue = new ConcurrentQueue<SmppDeliveryData>();
             //this.PendingDelivery = new Dictionary<uint, SmppDelivery>();
-            this.PendingDelivery = new ConcurrentDictionary<uint, SmppDelivery>();
+            this.PendingDelivery = new ConcurrentDictionary<uint, SmppDeliveryData>();
             //this.PendingDelivery = SortedList.Synchronized(new SortedList());
             MessageBuilder = SortedList.Synchronized(new SortedList());
             //MessageBuilderHash = new List<KeyValuePair<ulong, DateTime>>();
@@ -397,7 +413,7 @@ namespace SMSGateway.SMSCClient
                                 LogLevels.LogSteps,
                                 String.Format(
                                     "Unbind without response, terminated Connection {0} sucessfully :: Instance {1}",
-                                    ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id,
+                                    ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id,
                                     ConnectionNumber
                                 )
                             );
@@ -1322,7 +1338,7 @@ namespace SMSGateway.SMSCClient
         {
             get
             {
-                return ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id;
+                return ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id;
             }
         }
         #endregion Properties
@@ -1332,6 +1348,7 @@ namespace SMSGateway.SMSCClient
         public event SessionTerminatedHandler OnSessionEnd;
         public event PduRecievedHandler OnRecieved;
         public event PduSentHandler OnSent;
+        public event BindEventHandler OnClientBindRequested;
         public event BindEventHandler OnClientBind;
         public event UnbindEventHandler OnUnbind;
         public event SubmitSmEventHandler OnSubmitSm;
@@ -1342,18 +1359,19 @@ namespace SMSGateway.SMSCClient
         public event LogEventHandler OnLog;
         public event BindEventHandler OnBind;
         public event SendSmsEventHandler OnSendSms;
-        //public event Func<Task> OnSessionStart;
-        //public event Func<Task> OnSessionEnd;
-        //public event Func<Task> OnRecieved;
-        //public event Func<Task> OnSent;
-        //public event Func<Task> OnBindTransceiver;
-        //public event Func<Task> OnUnbind;
-        //public event Func<Task> OnSubmitSm;
-        //public event Func<Task> OnSubmitSmResp;
-        //public event Func<Task> OnDeliverSmTimerTick;
-        //public event Func<Task> OnDeliverSmSend;
-        //public event Func<Task> OnDeliverSm;
-        //public event Func<Task> OnLog;
+
+        //public event SesionCreatedHandler OnServerSessionStart;
+        //public event SessionTerminatedHandler OnServerSessionEnd;
+        //public event PduRecievedHandler OnServerRecieved;
+        //public event PduSentHandler OnServerSent;
+        //public event BindEventHandler OnServerBindTransceiver;
+        //public event UnbindEventHandler OnServerUnbind;
+        //public event SubmitSmEventHandler OnServerSubmitSm;
+        //public event SubmitSmRespEventHandler OnServerSubmitSmResp;
+        //public event DeliverSmTimerEventHandler OnServerDeliverSmTimerTick;
+        //public event DeliverSmSendEventHandler OnServerDeliverSmSend;
+        //public event DeliverSmEventHandler OnServerDeliverSm;
+        //public event LogEventHandler OnLog;
 
         #endregion Events
 
@@ -1475,7 +1493,7 @@ namespace SMSGateway.SMSCClient
                         args.Dispose();
                         //OnSent.BeginInvoke(this, smppEventArgs, OnSentCallbackComplete, smppEventArgs);
 
-                        Task.Run(() => OnSent.Invoke(this, smppEventArgs))
+                        Task.Run(() => OnSent?.Invoke(this, smppEventArgs))
                             .ContinueWith(task => OnSentCallbackComplete(task, smppEventArgs));
                     }
                     else
@@ -1624,7 +1642,8 @@ namespace SMSGateway.SMSCClient
                 connectionState = ConnectionStates.SMPP_SOCKET_DISCONNECTED;
                 //clientSocket.Shutdown(SocketShutdown.Both);
                 //sslStream.Close();
-                clientSocket.Client.Shutdown(SocketShutdown.Both);
+                if (!ReferenceEquals(clientSocket.Client, null))
+                    clientSocket.Client.Shutdown(SocketShutdown.Both);
             }
             catch (ObjectDisposedException ex)
             {
@@ -1701,13 +1720,13 @@ namespace SMSGateway.SMSCClient
                 if ((logLevel) > 0)
                 {
                     //MyLog.WriteLogFile("Log", "Log level-" + logLevel, pMessage);
-                    //if (ReferenceEquals(this.Identifier, null) || this.Identifier.GetType() != typeof(SmppSession))
+                    //if (ReferenceEquals(this.Identifier, null) || this.Identifier.GetType() != typeof(SmppSessionData))
                     //{
                     //    Logger.Write((LogType)logLevel, pMessage);
                     //}
                     //else
                     //{
-                    //    Logger.Write((LogType)logLevel, "[" + ((SmppSession)this.Identifier).Id.ToString() + "] " + pMessage);
+                    //    Logger.Write((LogType)logLevel, "[" + ((SmppSessionData)this.Identifier).Id.ToString() + "] " + pMessage);
                     //}
                     LogEventArgs evArg = new LogEventArgs((LogType)logLevel, pMessage);
                     processLog(evArg);
@@ -1751,10 +1770,10 @@ namespace SMSGateway.SMSCClient
                 //clientSocket.BeginConnect(remoteEP, new AsyncCallback(connectCallback), clientSocket);
                 //connectionState = ConnectionStates.SMPP_SOCKET_CONNECT_SENT;
                 tryToDisconnect();
-                this.Identifier = new SmppSession { 
+                this.Identifier = new SmppSessionData { 
                     Id = Guid.NewGuid(), 
                     Address = this.MC.Host, 
-                    ValidForm = DateTime.Now, 
+                    ValidFrom = DateTime.Now, 
                     ValidTo = DateTime.MaxValue
                 };
                 logMessage(LogLevels.LogInfo, "Trying to connect to " + this.MC.Operator + "[" + this.MC.Host + ":" + this.MC.Port + "]");
@@ -1870,7 +1889,19 @@ namespace SMSGateway.SMSCClient
                 ConnectionStateObject state = (ConnectionStateObject)ar.AsyncState;
                 TcpClient client = state.workSocket;
                 // Read data from the remote device.
-                int bytesRead = sslStream.EndRead(ar);
+                int bytesRead = 0;
+                try
+                {
+                    bytesRead = sslStream.EndRead(ar);
+                }
+                catch(IOException ex)
+                {
+                    logMessage(LogLevels.LogExceptions, "receiveCallback | connection closed");
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
                 //logMessage(LogLevels.LogSteps, "Received " + Utility.ConvertIntToHexString(bytesRead) + " bytes");
                 if (bytesRead > 0)
                 {
@@ -1956,7 +1987,7 @@ namespace SMSGateway.SMSCClient
                                 if (!ReferenceEquals(OnRecieved, null))
                                 {
                                     //OnRecieved.BeginInvoke(this, callbackArgs, OnRecievedCallbackComplete, callbackArgs);
-                                    Task.Run(() => this.OnRecieved(this, callbackArgs))
+                                    Task.Run(() => this.OnRecieved?.Invoke(this, callbackArgs))
                                         .ContinueWith(task => OnRecievedCallbackComplete(task, callbackArgs));
                                 }
 
@@ -1997,7 +2028,7 @@ namespace SMSGateway.SMSCClient
                                                 logMessage(LogLevels.LogInfo, $"Binded with {this.MC.Operator} {this.MC.Instance}");
                                                 if (!ReferenceEquals(this.OnBind, null))
                                                 {
-                                                    Task.Run(() => this.OnBind.Invoke(this, null));
+                                                    Task.Run(() => this.OnBind?.Invoke(this, null));
                                                 }
                                             }
                                             else
@@ -2444,6 +2475,16 @@ namespace SMSGateway.SMSCClient
                     Task.Run<int>(() => OnClientBind.Invoke(this, btrxArg))
                         .ContinueWith(task => onBindEventComplete(task, btrxArg));
                 }
+                //else if (OnServerBindTransceiver != null)
+                //{
+                //    //bindStatus = OnBindTransceiver(this, btrxArg);
+                //    OnServerBindTransceiver.BeginInvoke(this, btrxArg, onServerBindEventComplete, btrxArg);
+                //}
+                else if (OnClientBindRequested != null)
+                {
+                    Task.Run<int>(() => OnClientBindRequested.Invoke(this, btrxArg))
+                        .ContinueWith(task => onBindEventComplete(task, btrxArg));
+                }
                 else
                 {
 
@@ -2524,7 +2565,7 @@ namespace SMSGateway.SMSCClient
                     //clientSocket.Close();
 
                     logMessage(LogLevels.LogInfo, "processBind / Bind " + ConnectionType.ToString() + " Request Failed:" + "System Id -" + btrxArg.SystemId + " System Type-" + btrxArg.SystemType);
-                    logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSession)this.Identifier).Id, ConnectionNumber));
+                    logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
                     this.Dispose();
                 }
 
@@ -2539,11 +2580,12 @@ namespace SMSGateway.SMSCClient
                 //sendSubmitSmResp(btrxArg.Sequence, StatusCodes.ESME_RSYSERR, String.Empty);
 
                 logMessage(LogLevels.LogExceptions, "onBindEventComplete | " + ex.ToString());
-                logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSession)this.Identifier).Id, ConnectionNumber));
+                logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
                 this.Dispose();
             }
         }
-        //private void onBindEventComplete(IAsyncResult iar)
+
+        //private void onServerBindEventComplete(IAsyncResult iar)
         //{
         //    try
         //    {
@@ -2593,7 +2635,7 @@ namespace SMSGateway.SMSCClient
         //            //clientSocket.Close();
 
         //            logMessage(LogLevels.LogInfo, "processBind / Bind " + ConnectionType.ToString() + " Request Failed:" + "System Id -" + args.SystemId + " System Type-" + args.SystemType);
-        //            logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSession)this.Identifier).Id, ConnectionNumber));
+        //            logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
         //            this.Dispose();
         //        }
 
@@ -2607,8 +2649,8 @@ namespace SMSGateway.SMSCClient
         //    {
         //        //sendSubmitSmResp(args.Sequence, StatusCodes.ESME_RSYSERR, String.Empty);
 
-        //        logMessage(LogLevels.LogExceptions, "onBindEventComplete | " + ex.ToString());
-        //        logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSession)this.Identifier).Id, ConnectionNumber));
+        //        logMessage(LogLevels.LogExceptions, "onServerBindEventComplete | " + ex.ToString());
+        //        logMessage(LogLevels.LogSteps, String.Format("Terminating Connection {0} :: Instance {1}", ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
         //        this.Dispose();
         //    }
         //}
@@ -2935,7 +2977,8 @@ namespace SMSGateway.SMSCClient
                 //{
                 //    keys = this.PendingDelivery.Where(x => ReferenceEquals(x.Value, null) || x.Value.SentOn < cutOffTime).Select(x => x.Key).ToArray();
                 //}
-                keys = this.PendingDelivery.Where(x => ReferenceEquals(x.Value, null) || x.Value.SentOn < cutOffTime).Select(x => x.Key).ToArray();
+                //keys = this.PendingDelivery.Where(x => ReferenceEquals(x.Value, null) || x.Value.SentOn < cutOffTime).Select(x => x.Key).ToArray();
+                keys = this.PendingDelivery.Where(x => ReferenceEquals(x.Value, null) || ((DateTime) x.Value.AdditionalParameters["senton"]) < cutOffTime).Select(x => x.Key).ToArray();
                 foreach (uint key in keys)
                 {
                     try
@@ -2943,15 +2986,17 @@ namespace SMSGateway.SMSCClient
                         if (!this.PendingDelivery.ContainsKey(key))
                             return;
 
-                        SmppDelivery smppDelivery = this.PendingDelivery[key];
-                        smppDelivery.SentOn = null;
+                        SmppDeliveryData smppDelivery = this.PendingDelivery[key];
+                        //smppDelivery.SentOn = null;
+                        if (smppDelivery.AdditionalParameters.ContainsKey("senton"))
+                            smppDelivery.AdditionalParameters.Remove("senton");
                         DeliverSmSentEventArgs e = new DeliverSmSentEventArgs(new SmppEventArgs(16, Command.DELIVER_SM_RESP, 0, 0))
                         {
                             Data = smppDelivery,
                             SentStatus = -1
                         };
                         //this.OnDeliverSmSend.BeginInvoke(this, e, deliveryReportTimerCallbackComplete, e);
-                        Task.Run(() => OnDeliverSmSend.Invoke(this, e))
+                        Task.Run(() => OnDeliverSmSend?.Invoke(this, e))
                             .ContinueWith(task => deliveryReportTimerCallbackComplete(task, e));
                         //lock (PendingDeliveryLock)
                         //{
@@ -2975,7 +3020,7 @@ namespace SMSGateway.SMSCClient
         #region [ Delivery Send ]
         private void deliveryReportTimerCallback(object state)
         {
-            SmppDelivery smppDelivery = null;
+            SmppDeliveryData smppDelivery = null;
             uint sequenceNumber = 0;
             try
             {
@@ -3032,16 +3077,16 @@ namespace SMSGateway.SMSCClient
                 //Dictionary<int, string> keyValuePairs = new Dictionary<int, string>();
                 List<KeyValuePair<string, string>> keyValuePairs = new List<KeyValuePair<string, string>>();
                 //ConfigurationManager.AppSettings["DeliverySmDateFormat"]
-                keyValuePairs.Add(new KeyValuePair<string, string>("id", smppDelivery.MessageId));
-                keyValuePairs.Add(new KeyValuePair<string, string>("sub", ReferenceEquals(smppDelivery.SubmitTime, null) ? "000" : "001"));
-                keyValuePairs.Add(new KeyValuePair<string, string>("dlvrd", ReferenceEquals(smppDelivery.DeliveryTime, null) ? "000" : "001"));
+                keyValuePairs.Add(new KeyValuePair<string, string>("id", (string) smppDelivery.AdditionalParameters["messageid"]));
+                keyValuePairs.Add(new KeyValuePair<string, string>("sub", ReferenceEquals(smppDelivery.AdditionalParameters["messagestateupdatedon"], null) ? "000" : "001"));
+                keyValuePairs.Add(new KeyValuePair<string, string>("dlvrd", !ReferenceEquals(smppDelivery.AdditionalParameters["messagestate"], null) && ((MessageState)smppDelivery.AdditionalParameters["messagestate"] ) == MessageState.DELIVERED ? "001" : "000"));
                 //keyValuePairs.Add(new KeyValuePair<string, string>("submit date", String.Format("{0:yyyyMMddHHmmss}", smppDelivery.SubmitTime)));
-                keyValuePairs.Add(new KeyValuePair<string, string>("submit date", String.Format("{0:ddMMyyHHmm}", smppDelivery.SubmitTime)));
+                keyValuePairs.Add(new KeyValuePair<string, string>("submit date", String.Format("{0:ddMMyyHHmm}", smppDelivery.AdditionalParameters["createdon"])));
                 //keyValuePairs.Add(new KeyValuePair<string, string>("done date", String.Format("{0:yyyyMMddHHmmss}", smppDelivery.DeliveryTime)));
-                keyValuePairs.Add(new KeyValuePair<string, string>("done date", String.Format("{0:ddMMyyHHmm}", smppDelivery.DeliveryTime)));
-                keyValuePairs.Add(new KeyValuePair<string, string>("stat", ((DeliveryStatus)smppDelivery.DeliveryStatus).ToString()));
-                keyValuePairs.Add(new KeyValuePair<string, string>("err", smppDelivery.ErrorCode));
-                keyValuePairs.Add(new KeyValuePair<string, string>("text", smppDelivery.ShortMessage.Substring(0, smppDelivery.ShortMessage.Length > 50 ? 49 : smppDelivery.ShortMessage.Length - 1)));
+                keyValuePairs.Add(new KeyValuePair<string, string>("done date", String.Format("{0:ddMMyyHHmm}", smppDelivery.AdditionalParameters["messagestateupdatedon"])));
+                keyValuePairs.Add(new KeyValuePair<string, string>("stat", ((MessageState)smppDelivery.AdditionalParameters["messagestate"]).ToString()));
+                keyValuePairs.Add(new KeyValuePair<string, string>("err", (string) smppDelivery.AdditionalParameters["errorcode"]));
+                keyValuePairs.Add(new KeyValuePair<string, string>("text", smppDelivery.ShortMessage?.Substring(0, smppDelivery.ShortMessage.Length > 50 ? 49 : smppDelivery.ShortMessage.Length - 1)));
 
                 String messageText = String.Join(" ",
                     keyValuePairs
@@ -3104,9 +3149,14 @@ namespace SMSGateway.SMSCClient
 
                 List<OptionalParameter> parameters = new List<OptionalParameter>();
 
-
-                parameters.Add(new OptionalParameter(TagCodes.RECEIPTED_MESSAGE_ID, Utility.ConvertStringToByteArray(smppDelivery.MessageId)));
-                parameters.Add(new OptionalParameter(TagCodes.MESSAGE_STATE, new byte[1] { (byte)smppDelivery.DeliveryStatus }));
+                if (!ReferenceEquals(smppDelivery.AdditionalParameters["messageid"], null))
+                {
+                    string messageId = smppDelivery.AdditionalParameters["messageid"].ToString();
+                    byte[] RECEIPTED_MESSAGE_ID = new byte[messageId.Length + 1];
+                    Array.Copy(Utility.ConvertStringToByteArray(messageId), 0, RECEIPTED_MESSAGE_ID, 0, RECEIPTED_MESSAGE_ID.Length - 1);
+                    parameters.Add(new OptionalParameter(TagCodes.RECEIPTED_MESSAGE_ID, RECEIPTED_MESSAGE_ID));
+                }
+                parameters.Add(new OptionalParameter(TagCodes.MESSAGE_STATE, new byte[1] { (byte) (int) smppDelivery.AdditionalParameters["messagestate"] }));
 
 
                 string sServiceType = Utility.GetString("", 5, "");
@@ -3121,21 +3171,23 @@ namespace SMSGateway.SMSCClient
                 byte[] _dest_addr = new byte[sDestAddr.Length + 1];
                 Array.Copy(Utility.ConvertStringToByteArray(sDestAddr), 0, _dest_addr, 0, sDestAddr.Length);
 
-                string sScheduledDeliveryTime = ReferenceEquals(smppDelivery.DeliveryTime, null) ? "" : Utility.GetDateString((DateTime)smppDelivery.DeliveryTime);
-                byte[] _scheduled_delivery_time = new byte[sScheduledDeliveryTime.Length + 1];
-                Array.Copy(Utility.ConvertStringToByteArray(sScheduledDeliveryTime), 0, _scheduled_delivery_time, 0, sScheduledDeliveryTime.Length);
+                //string sScheduledDeliveryTime = ReferenceEquals(smppDelivery.AdditionalParameters["deliveryTime"], null) ? "" : Utility.GetDateString((DateTime)smppDelivery.AdditionalParameters["deliveryTime"]);
+                //byte[] _scheduled_delivery_time = new byte[sScheduledDeliveryTime.Length + 1];
+                //Array.Copy(Utility.ConvertStringToByteArray(sScheduledDeliveryTime), 0, _scheduled_delivery_time, 0, sScheduledDeliveryTime.Length);
 
-                string sValidityPeriod = ReferenceEquals(smppDelivery.DeliveryTime, null) ? "" : Utility.GetDateString((DateTime)smppDelivery.DeliveryTime);
-                byte[] _validity_period = new byte[sValidityPeriod.Length + 1];
-                Array.Copy(Utility.ConvertStringToByteArray(sValidityPeriod), 0, _validity_period, 0, sValidityPeriod.Length);
+                //string sValidityPeriod = ReferenceEquals(smppDelivery.AdditionalParameters["deliveryTime"], null) ? "" : Utility.GetDateString((DateTime)smppDelivery.AdditionalParameters["deliveryTime"]);
+                //byte[] _validity_period = new byte[sValidityPeriod.Length + 1];
+                //Array.Copy(Utility.ConvertStringToByteArray(sValidityPeriod), 0, _validity_period, 0, sValidityPeriod.Length);
+                byte[] _scheduled_delivery_time = new byte[1];
+                byte[] _validity_period = new byte[1];
 
                 string sShortMessage = Utility.GetString(messageText, 254, "");
-                byte[] _short_message = new byte[sShortMessage.Length + 1];
+                byte[] _short_message = new byte[sShortMessage.Length];
                 Array.Copy(Utility.ConvertStringToByteArray(sShortMessage), 0, _short_message, 0, sShortMessage.Length);
 
                 sequenceNumber = MC.SequenceNumber;
                 //smppDelivery.Id = smppEventArgs.Id;
-                smppDelivery.SentOn = DateTime.Now;
+                smppDelivery.AdditionalParameters["senton"] = DateTime.Now;
                 //lock (PendingDeliveryLock)
                 //{
                 //    this.PendingDelivery.Add(sequenceNumber, smppDelivery);
@@ -3151,14 +3203,14 @@ namespace SMSGateway.SMSCClient
                     destinationAddressNpi,
                     _dest_addr,
                     0x04, // esm-class
-                    protocolId,
-                    priorityFlag,
+                    smppDelivery.ProtocolId, //protocolId,
+                    smppDelivery.PriorityFlag, //priorityFlag,
                     _scheduled_delivery_time,
                     _validity_period,
-                    registeredDelivery,
-                    replaceIfPresentFlag,
-                    0x00,
-                    smDefaultMsgId,
+                    smppDelivery.RegisteredDelivery, //registeredDelivery,
+                    0x00, // replaceIfPresentFlag,
+                    smppDelivery.DataCoding, //0x00,
+                    0x00, //smDefaultMsgId,
                     (byte)_short_message.Length,
                     _short_message,
                     parameters,
@@ -3168,7 +3220,7 @@ namespace SMSGateway.SMSCClient
                 if (result != 0)
                     throw new SmppException(StatusCodes.ESME_RSYSERR);
 
-                smppDelivery.CommandId = smppEventArgs.Id;
+                smppDelivery.AdditionalParameters["commandid"] = smppEventArgs.Id;
                 //lock (this.PendingDeliveryLock)
                 //{
                 //    if (this.PendingDelivery.ContainsKey(sequenceNumber))
@@ -3179,7 +3231,7 @@ namespace SMSGateway.SMSCClient
 
                 if (this.PendingDelivery.ContainsKey(sequenceNumber))
                 {
-                    SmppDelivery currentSmppDelivery;
+                    SmppDeliveryData currentSmppDelivery;
                     this.PendingDelivery.TryGetValue(sequenceNumber, out currentSmppDelivery);
                     this.PendingDelivery.TryUpdate(sequenceNumber, smppDelivery, currentSmppDelivery);
                 }
@@ -3221,7 +3273,7 @@ namespace SMSGateway.SMSCClient
                     //lock(PendingDeliveryLock) {
                     //    this.PendingDelivery.Remove(sequenceNumber);
                     //}
-                    SmppDelivery smppDeliveryToRemove;
+                    SmppDeliveryData smppDeliveryToRemove;
                     this.PendingDelivery.TryRemove(sequenceNumber, out smppDeliveryToRemove);
                 }
                 //this.SendingDelivery--;
@@ -3463,7 +3515,7 @@ namespace SMSGateway.SMSCClient
 
                     logMessage(LogLevels.LogSteps, "Submit_Sm Invoked");
                     //OnSubmitSm.BeginInvoke(this, e, onSubmitSmEventComplete, e);
-                    Task.Run(() => OnSubmitSm.Invoke(this, e))
+                    Task.Run(() => OnSubmitSm?.Invoke(this, e) )
                         .ContinueWith(task => onSubmitSmEventComplete(task, e));
                 }
                 //sendSubmitSmResp(sequence_number, command_status, respMessageId);
@@ -3499,6 +3551,17 @@ namespace SMSGateway.SMSCClient
             catch (ObjectDisposedException ex)
             {
                 return;
+            }
+            catch (SmppException ex)
+            {
+                if (ex.ErrorCode == StatusCodes.ESME_RTHROTTLED)
+                {
+                    sendSubmitSmResp(args.Sequence, StatusCodes.ESME_RTHROTTLED, String.Empty);
+                    unBind();
+                    //tryToDisconnect();
+                }
+                else
+                    sendSubmitSmResp(args.Sequence, StatusCodes.ESME_RSYSERR, String.Empty);
             }
             catch (Exception ex)
             {
@@ -3799,7 +3862,7 @@ namespace SMSGateway.SMSCClient
                 if (!this.PendingDelivery.ContainsKey(args.Sequence))
                     return;
 
-                SmppDelivery smppDelivery = this.PendingDelivery[args.Sequence];
+                SmppDeliveryData smppDelivery = this.PendingDelivery[args.Sequence];
                 if (!ReferenceEquals(args, null))
                 //SmppDelivery smppDelivery;
                 //if (!ReferenceEquals(args, null) && this.PendingDelivery.TryGetValue(args.Sequence, out smppDelivery))
@@ -3818,7 +3881,7 @@ namespace SMSGateway.SMSCClient
                         SentStatus = 0
                     };
                     //this.OnDeliverSmSend.BeginInvoke(this, e, deliveryReportTimerCallbackComplete, e);
-                    Task.Run(() => OnDeliverSmSend.Invoke(this, e))
+                    Task.Run(() => OnDeliverSmSend?.Invoke(this, e))
                             .ContinueWith(task => deliveryReportTimerCallbackComplete(task, e));
                     this.PendingDelivery.TryRemove(args.Sequence, out smppDelivery);
                 }
@@ -4503,7 +4566,7 @@ namespace SMSGateway.SMSCClient
                     {
                         SmppEventArgs args = new SmppEventArgs(_PDU, 16);
                         //OnUnbind.BeginInvoke(this, onServerUnbindEventComplete, args.Sequence);
-                        Task.Run(() => this.OnUnbind.Invoke(this))
+                        Task.Run(() => this.OnUnbind?.Invoke(this))
                             .ContinueWith(task => onServerUnbindEventComplete(task, args.Sequence));
                         //this.OnUnbind(this);
                         args.Dispose();
@@ -4555,7 +4618,7 @@ namespace SMSGateway.SMSCClient
         {
             try
             {
-                logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id, ConnectionNumber));
+                logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
 
                 disconnectTokenSource.Cancel();
 
@@ -4605,11 +4668,11 @@ namespace SMSGateway.SMSCClient
                 if (_command_status == StatusCodes.ESME_ROK)
                 {
                     connectionState = ConnectionStates.SMPP_UNBINDED;
-                    logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id, ConnectionNumber));
+                    logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
                 }
                 else
                 {
-                    logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} with error 0x{2:X} :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id, ConnectionNumber, _command_status));
+                    logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} with error 0x{2:X} :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id, ConnectionNumber, _command_status));
                 }
                 this.Dispose();
             }
@@ -4640,11 +4703,11 @@ namespace SMSGateway.SMSCClient
         //        if (_command_status == StatusCodes.ESME_ROK)
         //        {
         //            connectionState = ConnectionStates.SMPP_UNBINDED;
-        //            logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id, ConnectionNumber));
+        //            logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} sucessfully :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id, ConnectionNumber));
         //        }
         //        else
         //        {
-        //            logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} with error 0x{2:X} :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSession)this.Identifier).Id, ConnectionNumber, _command_status));
+        //            logMessage(LogLevels.LogSteps, String.Format("Unbind complete, terminated Connection {0} with error 0x{2:X} :: Instance {1}", ReferenceEquals(this.Identifier, null) ? new Guid() : ((SmppSessionData)this.Identifier).Id, ConnectionNumber, _command_status));
         //        }
         //        this.Dispose();
         //    }
@@ -5103,7 +5166,7 @@ namespace SMSGateway.SMSCClient
             {
                 SessionEventArgs e = new SessionEventArgs
                 {
-                    Id = ((SmppSession)this.Identifier).Id,
+                    Id = ((SmppSessionData)this.Identifier).Id,
                     //Address = clientSocket.Client.RemoteEndPoint.ToString(),
                 };
 
@@ -5178,7 +5241,7 @@ namespace SMSGateway.SMSCClient
 
         public async Task<SmppConnectionStatistic> GetStatistics()
         {
-            SmppSession smppSession = ((SmppSession)this.Identifier);
+            SmppSessionData smppSession = ((SmppSessionData)this.Identifier);
 
             SmppConnectionStatistic s = new SmppConnectionStatistic();
             s.Instance = this.ConnectionNumber;
@@ -5190,9 +5253,9 @@ namespace SMSGateway.SMSCClient
             s.PendingDeliveries = this.PendingDelivery.Count;
             s.PendingDeliveriesMemorySize = await Utility.GetMemorySizeAsync(this.PendingDelivery);
 
-            s.StartTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidForm > DateTime.Now ? null : (DateTime?)smppSession.ValidForm);
+            s.StartTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidFrom > DateTime.Now ? null : (DateTime?)smppSession.ValidFrom);
             s.EndTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidTo > DateTime.Now ? null : (DateTime?)smppSession.ValidTo);
-            s.StartTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidForm > DateTime.Now ? null : (DateTime?)smppSession.ValidForm);
+            s.StartTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidFrom > DateTime.Now ? null : (DateTime?)smppSession.ValidFrom);
             s.EndTime = ReferenceEquals(smppSession, null) ? null : (smppSession.ValidTo > DateTime.Now ? null : (DateTime?)smppSession.ValidTo);
 
             s.PendingMessageParts = this.MessageBuilder.Count;

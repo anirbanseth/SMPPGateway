@@ -5,26 +5,38 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SMSGateway.SMSCClient
+//namespace SMSGateway.Entity
 {
-    public class SmppDelivery
+    public class SmppDeliveryData
     {
-        public Guid Id { get; set; }
-        public Guid? CommandId { get; set; }
-        public Guid UserId { get; set; }
-        public string SourceAddress { get; set; }
-        public string DestAddress { get; set; }
-        public string MessageId { get; set; }
-        public string ShortMessage { get; set; }
-        public DateTime? SubmitTime { get; set; }
-        public byte DeliveryStatus { get; set; }
-        public DateTime? DeliveryTime { get; set; }
-        public string ErrorCode { get; set; }
-        public int RetryIndex { get; set; }
-        public DateTime RetryOn { get; set; }
-        public string Status { get; set; }
-        public DateTime? SentOn { get; set; }
-        public DateTime CreatedOn { get; set; }
-        public DateTime UpdatedOn { get; set; }
+        public string ServiceType { get; set; }
+        public byte SourceAddressTon { get; set; }
+        public byte SourceAddressNpi { get; set; }
+        public string? SourceAddress { get; set; }
+        public byte DestinationAddressTon { get; set; }
+        public byte DestinationAddressNpi { get; set; }
+        public string? DestAddress { get; set; }
 
+        public byte EsmClass { get; set; }
+        public byte ProtocolId { get; set; }
+        public byte PriorityFlag {  get; set; }
+
+        public string? ScheduledDeliveryTime { get; set; }
+        public string? ValidityPeriod { get; set; }
+        public byte RegisteredDelivery { get; set; }
+        //public byte ReplaceIfFlagPresent { get; set; }
+        public byte DataCoding { get; set; }
+
+        //public byte DefaultMessageId { get; set; }
+        public string? ShortMessage { get; set; }
+
+        public List<KeyValuePair<int, string>> TlvParameters { get; set; }
+        public Dictionary<string, object > AdditionalParameters { get; set; }
+
+        public SmppDeliveryData()
+        {
+            TlvParameters = new List<KeyValuePair<int, string>>();
+            AdditionalParameters = new Dictionary<string, object>();
+        }
     }
 }
