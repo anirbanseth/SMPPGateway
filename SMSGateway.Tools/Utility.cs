@@ -621,6 +621,9 @@ namespace SMSGateway.Tools
         {
             string[] array = short_message.Split(new string[] { "id", "submit date", "done date", "sub", "dlvrd", "stat", "err", "text" }, StringSplitOptions.RemoveEmptyEntries);
 
+            if (array.Any())
+                array = array.Select(x => x.Trim()).ToArray();
+
             Dictionary<string, string> dictionary = new Dictionary<string, string>();
             foreach (string s in array)
             {
