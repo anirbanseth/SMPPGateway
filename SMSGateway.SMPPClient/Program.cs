@@ -24,8 +24,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<SmppClientWorker>();
         services.AddHostedService<DatabaseWorker>();
         services.AddHostedService<GCWorker>();
-        //services.AddHostedService<DeliveryReportWorker>();
-        //services.AddHostedService<DeliveryGenerateWorker>();
+        services.AddHostedService<DeliveryReportWorker>();
+        services.AddHostedService<DeliveryGenerateWorker>();
         #endregion
 
         #region [ Server ]
