@@ -505,6 +505,7 @@ namespace SMSGateway.Tools
         public class MessageType
         {
             public const byte Default = 0;
+            public const byte ContainsMCDeliveryAcknowledgement = 2;
             public const byte ContainsMCDeliveryReceipt = 4;
             public const byte ContainsIntermediateDeliveryNotification = 32;
         }

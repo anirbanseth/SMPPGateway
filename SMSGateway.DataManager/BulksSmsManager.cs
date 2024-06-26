@@ -211,7 +211,8 @@ namespace SMSGateway.DataManager
                 $"@sms_campaign_head_details_id, " +
                 $"@sms_campaign_details_id, " +
                 $"@smpp_user_details_id, " +
-                $"@message, senderid, " +
+                $"@message, " +
+                $"@senderid, " +
                 $"@enitityid, " +
                 $"@templateid, " +
                 $"@destination, " +

@@ -715,60 +715,127 @@ namespace SMSGateway.SMSCClient
 
                 #region [ Multi Page SMS ESM Class 0x40 / 64 ]
 
-                switch (e.EsmClass)
+                //switch (e.EsmClass)
+                //{
+                //    case EsmClass.MessagingMode.Default | EsmClass.MessageType.Default | EsmClass.GSM.Default:
+                //        //shortMessage = e.DataCoding == 0x00 || e.DataCoding == 0x01
+                //        //    ? Utility.ConvertArrayToString(e.Message, e.SmLength)
+                //        //    : Utility.ConvertArrayToUnicodeString(e.Message, e.SmLength);
+
+                //        shortMessage = getShortMessage(e.DataCoding, e.Message, e.SmLength);
+                //        break;
+                //    case EsmClass.GSM.UDHIndicator:
+                //        byte udh_length = e.Message[pos++];
+                //        byte[] udh = new byte[udh_length];
+                //        byte subheader_length = 0;
+                //        Array.Copy(e.Message, 0, udh, 0, udh.Length);
+                //        //pos += udh.Length;
+
+                //        byte udh_code = e.Message[pos++];
+                //        switch (udh_code)
+                //        {
+                //            case UDHIndicators.b00: // Concatenated short messages, 8-bit reference number
+                //                                    // Subheader Length(3 bytes)
+                //                subheader_length = e.Message[pos++];
+                //                if (subheader_length != 0x03)
+                //                    throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
+
+                //                // message identification - can be any hexadecimal
+                //                // number but needs to match the UDH Reference Number of all  concatenated SMS
+                //                message_identification = e.Message[pos++];
+                //                // Number of pieces of the concatenated message
+                //                message_part_total = e.Message[pos++];
+                //                // Sequence number (used by the mobile to concatenate the split messages)
+                //                message_part = e.Message[pos++];
+
+                //                //shortMessage = e.DataCoding == 0x00 
+                //                //    ? Utility.ConvertArrayToString(e.Message.Skip(6).ToArray(), e.SmLength - 6)
+                //                //    : Utility.ConvertArrayToUnicodeString(e.Message.Skip(6).ToArray(), e.SmLength - 6);
+                //                shortMessage = getShortMessage(e.DataCoding, e.Message.Skip(6).ToArray(), e.SmLength - 6);
+
+                //                isMultiPartMessage = true;
+                //                break;
+                //            case UDHIndicators.b24:
+                //            case UDHIndicators.b25:
+                //                subheader_length = e.Message[pos++];
+                //                if (subheader_length != 0x01)
+                //                    throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
+
+                //                gsm7udhvalue = 0 | udh_code << 16 | subheader_length << 8 | e.Message[pos++];
+                //                break;
+                //        }
+                //        break;
+                //    default:
+                //        break;
+                //}
+                switch (e.EsmClass & 0b00000011)
                 {
-                    case EsmClass.MessagingMode.Default | EsmClass.MessageType.Default | EsmClass.GSM.Default:
-                        //shortMessage = e.DataCoding == 0x00 || e.DataCoding == 0x01
-                        //    ? Utility.ConvertArrayToString(e.Message, e.SmLength)
-                        //    : Utility.ConvertArrayToUnicodeString(e.Message, e.SmLength);
-
-                        shortMessage = getShortMessage(e.DataCoding, e.Message, e.SmLength);
+                    case EsmClass.MessagingMode.Default:
                         break;
-                    case EsmClass.GSM.UDHIndicator:
-                        byte udh_length = e.Message[pos++];
-                        byte[] udh = new byte[udh_length];
-                        byte subheader_length = 0;
-                        Array.Copy(e.Message, 0, udh, 0, udh.Length);
-                        //pos += udh.Length;
-
-                        byte udh_code = e.Message[pos++];
-                        switch (udh_code)
-                        {
-                            case UDHIndicators.b00: // Concatenated short messages, 8-bit reference number
-                                                    // Subheader Length(3 bytes)
-                                subheader_length = e.Message[pos++];
-                                if (subheader_length != 0x03)
-                                    throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
-
-                                // message identification - can be any hexadecimal
-                                // number but needs to match the UDH Reference Number of all  concatenated SMS
-                                message_identification = e.Message[pos++];
-                                // Number of pieces of the concatenated message
-                                message_part_total = e.Message[pos++];
-                                // Sequence number (used by the mobile to concatenate the split messages)
-                                message_part = e.Message[pos++];
-
-                                //shortMessage = e.DataCoding == 0x00 
-                                //    ? Utility.ConvertArrayToString(e.Message.Skip(6).ToArray(), e.SmLength - 6)
-                                //    : Utility.ConvertArrayToUnicodeString(e.Message.Skip(6).ToArray(), e.SmLength - 6);
-                                shortMessage = getShortMessage(e.DataCoding, e.Message.Skip(6).ToArray(), e.SmLength - 6);
-
-                                isMultiPartMessage = true;
-                                break;
-                            case UDHIndicators.b24:
-                            case UDHIndicators.b25:
-                                subheader_length = e.Message[pos++];
-                                if (subheader_length != 0x01)
-                                    throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
-
-                                gsm7udhvalue = 0 | udh_code << 16 | subheader_length << 8 | e.Message[pos++];
-                                break;
-                        }
+                    case EsmClass.MessagingMode.Datagram:
                         break;
-                    default:
+                    case EsmClass.MessagingMode.Forward:
+                        break;
+                    case EsmClass.MessagingMode.StoreAndForward:
                         break;
                 }
+                switch(e.EsmClass & 0b00111100)
+                {
+                    case EsmClass.MessageType.Default:  // 0
+                        break;
+                    case EsmClass.MessageType.ContainsMCDeliveryAcknowledgement: // 2
+                        break;
+                    case EsmClass.MessageType.ContainsMCDeliveryReceipt: // 4
+                        break;
+                    
+                }
+                if ((e.EsmClass & 0b11000000) == EsmClass.GSM.UDHIndicator
+                    || (e.EsmClass & 0b11000000) == EsmClass.GSM.SetEdhiAndReplyPath)
+                {
+                    byte udh_length = e.Message[pos++];
+                    byte[] udh = new byte[udh_length];
+                    byte subheader_length = 0;
+                    Array.Copy(e.Message, 0, udh, 0, udh.Length);
+                    //pos += udh.Length;
 
+                    byte udh_code = e.Message[pos++];
+                    switch (udh_code)
+                    {
+                        case UDHIndicators.b00: // Concatenated short messages, 8-bit reference number
+                                                // Subheader Length(3 bytes)
+                            subheader_length = e.Message[pos++];
+                            if (subheader_length != 0x03)
+                                throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
+
+                            // message identification - can be any hexadecimal
+                            // number but needs to match the UDH Reference Number of all  concatenated SMS
+                            message_identification = e.Message[pos++];
+                            // Number of pieces of the concatenated message
+                            message_part_total = e.Message[pos++];
+                            // Sequence number (used by the mobile to concatenate the split messages)
+                            message_part = e.Message[pos++];
+
+                            //shortMessage = e.DataCoding == 0x00 
+                            //    ? Utility.ConvertArrayToString(e.Message.Skip(6).ToArray(), e.SmLength - 6)
+                            //    : Utility.ConvertArrayToUnicodeString(e.Message.Skip(6).ToArray(), e.SmLength - 6);
+                            shortMessage = getShortMessage(e.DataCoding, e.Message.Skip(6).ToArray(), e.SmLength - 6);
+
+                            isMultiPartMessage = true;
+                            break;
+                        case UDHIndicators.b24:
+                        case UDHIndicators.b25:
+                            subheader_length = e.Message[pos++];
+                            if (subheader_length != 0x01)
+                                throw new SmppException(StatusCodes.ESME_RINVOPTPARSTREAM);
+
+                            gsm7udhvalue = 0 | udh_code << 16 | subheader_length << 8 | e.Message[pos++];
+                            break;
+                    }
+                }
+                else
+                {
+                    shortMessage = getShortMessage(e.DataCoding, e.Message, e.SmLength);
+                }
                 #endregion
 
                 logMessage(LogLevels.LogSteps, String.Format("[{0}] Connection_OnSubmitSm | {1} | Begin saving", connection.SessionId, e.Sequence));
@@ -911,21 +978,21 @@ namespace SMSGateway.SMSCClient
                         templateid: c.TemplateId, // c.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => x.Value).FirstOrDefault(),
                         destination: Convert.ToInt64(e.DestAddress),
                         piority: e.PriorityFlag,
-                        message_id: String.Empty,
-                        submit_sms_id: null,
-                        coding: e.DataCoding,
-                        smsc_details_id: null,
+                        message_id: "",
+                        submit_sms_id: 0,
+                        coding: (e.DataCoding == 8 ? 2 : 0),
+                        smsc_details_id: 0,
                         create_date: DateTime.Now,
                         status: status,
                         dlt_cost: session.DltCharge,
                         sms_cost: session.SmsCost,
                         serial_number: 1,
                         @operator: @operator,
-                        smpp: String.Empty,
-                        from: String.Empty,
+                        smpp: "",
+                        from: "",
                         session_id: null,
-                        retry_count: 0,
-                        sms_cost_mode: null,
+                        retry_count: 1,
+                        sms_cost_mode: '1',
                         source: "SRV"
                     ); ;
 
@@ -936,7 +1003,7 @@ namespace SMSGateway.SMSCClient
                     await new SmppServerManager().SaveText(c);
 
                     #region [ Add SMS to connection queue ]
-                    if (c.Status == "SUB")
+                    if (c.Status == "PRC")
                     {
                         //SmppConnectionManager
                         //    .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && @operator.Equals(x.MC.Operator))
@@ -946,7 +1013,7 @@ namespace SMSGateway.SMSCClient
                         {
                             From = c.SourceAddress,
                             To = c.DestAddress,
-                            Coding = c.DataCoding,
+                            Coding = (e.DataCoding == 8 ? 2 : 0),
                             Message = c.ShortMessage,
                             AskDeliveryReceipt = true,
                             Priority = c.PriorityFlag,
@@ -957,14 +1024,14 @@ namespace SMSGateway.SMSCClient
                             Operator = @operator,
                             RetryIndex = 0
                         };
-                        sms.AdditionalData["sms_campaign_head_details_id"] = 0;
-                        sms.AdditionalData["sms_campaign_details_id"] = 0;
+                        sms.AdditionalData["sms_campaign_head_details_id"] = (long)0;
+                        sms.AdditionalData["sms_campaign_details_id"] = (long)0;
                         sms.AdditionalData["smpp_user_details_id"] = (int)((SmppSessionData)connection.Identifier).UserId;
-                        sms.AdditionalData["dlt_cost"] = 0;
-                        sms.AdditionalData["sms_cost"] = 0;
-                        sms.AdditionalData["sms_cost_mode"] = 0;
+                        sms.AdditionalData["dlt_cost"] = session.DltCharge;
+                        sms.AdditionalData["sms_cost"] = session.SmsCost;
+                        sms.AdditionalData["sms_cost_mode"] = "1";
                         Messages.Enqueue(@operator, sms);
-                            
+                        
                     }
                     #endregion
                 }
@@ -1154,7 +1221,7 @@ namespace SMSGateway.SMSCClient
                 #endregion
 
                 #region [ Save Send Sms ] 
-
+                
                 ulong send_sms_id = await new BulksSmsManager().SaveSendSms(
                     //send_sms_id: 0,
                     sms_campaign_head_details_id: 0,
@@ -1167,20 +1234,20 @@ namespace SMSGateway.SMSCClient
                     destination: Convert.ToInt64(smppText.DestAddress),
                     piority: smppText.PriorityFlag,
                     message_id: String.Empty,
-                    submit_sms_id: null,
-                    coding: smppText.DataCoding,
-                    smsc_details_id: null,
+                    submit_sms_id: 0,
+                    coding: (smppText.DataCoding == 8 ? 2 : 0),
+                    smsc_details_id: 0,
                     create_date: DateTime.Now,
                     status: status,
                     dlt_cost: session.DltCharge * (byte) smppText.TotalParts,
                     sms_cost: session.SmsCost * (byte) smppText.TotalParts,
                     serial_number: 1,
                     @operator: @operator,
-                    smpp: String.Empty,
-                    from: String.Empty,
+                    smpp: "",
+                    from: "",
                     session_id: null,
-                    retry_count: 0,
-                    sms_cost_mode: null,
+                    retry_count: 1,
+                    sms_cost_mode: '1',
                     source: "SRV"
                 );
 
@@ -1196,7 +1263,7 @@ namespace SMSGateway.SMSCClient
                     {
                         From = smppText.SourceAddress,
                         To = smppText.DestAddress,
-                        Coding = smppText.DataCoding,
+                        Coding = (smppText.DataCoding == 8 ? 8 : 0),
                         Message = messageText,
                         AskDeliveryReceipt = true,
                         Priority = smppText.PriorityFlag,
@@ -1207,12 +1274,12 @@ namespace SMSGateway.SMSCClient
                         Operator = @operator,
                         RetryIndex = 0
                     };
-                    sms.AdditionalData["sms_campaign_head_details_id"] = 0;
-                    sms.AdditionalData["sms_campaign_details_id"] = 0;
+                    sms.AdditionalData["sms_campaign_head_details_id"] = (long)0;
+                    sms.AdditionalData["sms_campaign_details_id"] = (long) 0;
                     sms.AdditionalData["smpp_user_details_id"] = (int)((SmppSessionData)connection.Identifier).UserId;
-                    sms.AdditionalData["dlt_cost"] = 0;
-                    sms.AdditionalData["sms_cost"] = 0;
-                    sms.AdditionalData["sms_cost_mode"] = 0;
+                    sms.AdditionalData["dlt_cost"] = session.DltCharge;
+                    sms.AdditionalData["sms_cost"] = session.SmsCost;
+                    sms.AdditionalData["sms_cost_mode"] = "1";
                     Messages.Enqueue(@operator, sms);
 
                 }
@@ -1321,6 +1388,14 @@ namespace SMSGateway.SMSCClient
                     else if (0b11110000 <= dataCoding && dataCoding <= 0b11111111)
                     {
                         // GSM message class control - see [GSM 03.38]
+                        Encoding gsmEnc1 = new Mediaburst.Text.GSMEncoding();
+                        Encoding utf8Enc1 = new System.Text.UTF8Encoding();
+
+                        //byte[] gsmBytes = utf8Enc.GetBytes(body);
+                        byte[] gsmBytes1 = new byte[len];
+                        Array.Copy(ar, 0, gsmBytes1, 0, len);
+                        byte[] utf8Bytes1 = Encoding.Convert(gsmEnc1, utf8Enc1, gsmBytes1);
+                        messageText = utf8Enc1.GetString(utf8Bytes1);
                     }
 
                     break;
