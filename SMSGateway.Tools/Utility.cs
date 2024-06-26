@@ -736,6 +736,12 @@ namespace SMSGateway.Tools
                     else if (0b11110000 <= dataCoding && dataCoding <= 0b11111111)
                     {
                         // GSM message class control - see [GSM 03.38]
+                        Encoding gsmEnc1 = new Mediaburst.Text.GSMEncoding();
+                        Encoding utf8Enc1 = new System.Text.UTF8Encoding();
+
+                        byte[] utf8Bytes1 = Encoding.ASCII.GetBytes(message);
+                        byte[] gsmBytes1 = Encoding.Convert(utf8Enc1, gsmEnc1, utf8Bytes1);
+                        messageBytes = gsmBytes1;
                     }
 
                     break;
@@ -820,6 +826,14 @@ namespace SMSGateway.Tools
                     else if (0b11110000 <= dataCoding && dataCoding <= 0b11111111)
                     {
                         // GSM message class control - see [GSM 03.38]
+                        Encoding gsmEnc1 = new Mediaburst.Text.GSMEncoding();
+                        Encoding utf8Enc1 = new System.Text.UTF8Encoding();
+
+                        //byte[] gsmBytes = utf8Enc.GetBytes(body);
+                        byte[] gsmBytes1 = new byte[len];
+                        Array.Copy(ar, 0, gsmBytes1, 0, len);
+                        byte[] utf8Bytes1 = Encoding.Convert(gsmEnc1, utf8Enc1, gsmBytes1);
+                        messageText = utf8Enc1.GetString(utf8Bytes1);
                     }
 
                     break;
