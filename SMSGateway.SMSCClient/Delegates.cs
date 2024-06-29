@@ -401,6 +401,30 @@ namespace SMSGateway.SMSCClient
 
             base.Dispose();
         }
+
+        public byte MessagingMode
+        {
+            get
+            {
+                return (byte) ( EsmClass & 0b00000011);
+            }
+        }
+
+        public byte MessageType
+        {
+            get
+            {
+                return (byte)(EsmClass & 0b00111100);
+            }
+        }
+
+        public byte UDHI
+        {
+            get
+            {
+                return (byte)(EsmClass & 0b11000000);
+            }
+        }
     }
 
     /// <summary>

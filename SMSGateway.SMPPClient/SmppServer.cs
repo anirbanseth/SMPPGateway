@@ -663,11 +663,12 @@ namespace SMSGateway.SMSCClient
                 if (activeOperators.Length == 0)
                 {
                     // throw new SmppException(StatusCodes.ESME_RSYSERR);
+                    status = "NEW"; // no active operator
                     @operator = routes.Length == 1 ? routes[0] : routes[new Random().Next(0, routes.Length - 1)];
                 }
                 else
                 {
-                    status = "SUB";
+                    status = (e.MessageType == 3 ? "NEW" : "SUB"); // NEW for store and forward else SUB
                     @operator = activeOperators.Length == 1 ? activeOperators[0] : routes[new Random().Next(0, routes.Length - 1)];
                 }
                 #endregion
@@ -677,17 +678,17 @@ namespace SMSGateway.SMSCClient
                 {
                     PEID = e.OptionalParams
                         .Where(x => x.Tag == 0x1400)
-                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length - 1))
+                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length))
                         .FirstOrDefault();
 
                     TMID = e.OptionalParams
                         .Where(x => x.Tag == 0x1402)
-                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length - 1))
+                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length))
                         .FirstOrDefault();
 
                     TemplateId = e.OptionalParams
                         .Where(x => x.Tag == 0x1401)
-                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length - 1))
+                        .Select(x => Utility.ConvertArrayToString(x.Value, x.Length < 1 ? 0 : x.Length))
                         .FirstOrDefault();
 
 
@@ -701,7 +702,7 @@ namespace SMSGateway.SMSCClient
                     {
                         string messagePayload = e.OptionalParams
                             .Where(x => x.Tag == TagCodes.MESSAGE_PAYLOAD)
-                            .Select(x => getShortMessage(e.DataCoding, x.Value, x.Length < 1 ? 0 : x.Length - 1))
+                            .Select(x => getShortMessage(e.DataCoding, x.Value, x.Length < 1 ? 0 : x.Length))
                             .FirstOrDefault();
 
                         if (!String.IsNullOrEmpty(messagePayload))
@@ -1003,7 +1004,7 @@ namespace SMSGateway.SMSCClient
                     await new SmppServerManager().SaveText(c);
 
                     #region [ Add SMS to connection queue ]
-                    if (c.Status == "PRC")
+                    if (status == "SUB")
                     {
                         //SmppConnectionManager
                         //    .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && @operator.Equals(x.MC.Operator))
@@ -1286,6 +1287,38 @@ namespace SMSGateway.SMSCClient
                 #endregion
                 #endregion
 
+                #region [ Add SMS to connection queue ]
+                if (status == "SUB")
+                {
+                    //SmppConnectionManager
+                    //    .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && @operator.Equals(x.MC.Operator))
+                    //    .FirstOrDefault()
+                    //    .SendSms()
+                    SmsMessage sms = new SmsMessage()
+                    {
+                        From = smppText.SourceAddress,
+                        To = smppText.DestAddress,
+                        Coding = (e.DataCoding == 8 ? 2 : 0),
+                        Message = messageText,
+                        AskDeliveryReceipt = true,
+                        Priority = smppText.PriorityFlag,
+                        RefId = send_sms_id.ToString(),
+                        PEID = smppText.PEID,
+                        TMID = smppText.TMID,
+                        TemplateId = smppText.TemplateId,
+                        Operator = @operator,
+                        RetryIndex = 0
+                    };
+                    sms.AdditionalData["sms_campaign_head_details_id"] = (long)0;
+                    sms.AdditionalData["sms_campaign_details_id"] = (long)0;
+                    sms.AdditionalData["smpp_user_details_id"] = (int)((SmppSessionData)connection.Identifier).UserId;
+                    sms.AdditionalData["dlt_cost"] = session.DltCharge;
+                    sms.AdditionalData["sms_cost"] = session.SmsCost;
+                    sms.AdditionalData["sms_cost_mode"] = "1";
+                    Messages.Enqueue(@operator, sms);
+
+                }
+                #endregion
 
                 for (int i = 0; i < smppTexts.Count; i++)
                 {
