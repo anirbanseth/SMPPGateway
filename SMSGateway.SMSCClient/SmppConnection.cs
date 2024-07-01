@@ -1107,9 +1107,12 @@ namespace SMSGateway.SMSCClient
 
                 #region [ TLV parameters ]
                 List<KeyValuePair<int, string>> tlvList = new List<KeyValuePair<int, string>>();
-                tlvList.Add(new KeyValuePair<int, string>(0x1400, peId)); // PE_ID
-                tlvList.Add(new KeyValuePair<int, string>(0x1401, templateId)); // Template ID
-                tlvList.Add(new KeyValuePair<int, string>(0x1402, tmId)); // TM_ID
+                if (!String.IsNullOrEmpty(peId))
+                    tlvList.Add(new KeyValuePair<int, string>(0x1400, peId)); // PE_ID
+                if (!String.IsNullOrEmpty(templateId))
+                    tlvList.Add(new KeyValuePair<int, string>(0x1401, templateId)); // Template ID
+                if (!string.IsNullOrEmpty(tmId))
+                    tlvList.Add(new KeyValuePair<int, string>(0x1402, tmId)); // TM_ID
 
                 foreach (KeyValuePair<int, string> item in tlvList)
                 {
@@ -1176,7 +1179,7 @@ namespace SMSGateway.SMSCClient
             }
             catch (Exception ex)
             {
-                logMessage(LogLevels.LogExceptions, "SubmitSM | " + ex.ToString());
+                logMessage(LogLevels.LogExceptions, "SubmitSMExtended | " + ex.ToString());
             }
             return -1;
 

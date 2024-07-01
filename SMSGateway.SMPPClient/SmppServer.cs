@@ -1254,36 +1254,36 @@ namespace SMSGateway.SMSCClient
 
 
                 #region [ Add SMS to connection queue ]
-                if (smppText.Status == "SUB")
-                {
-                    //SmppConnectionManager
-                    //    .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && @operator.Equals(x.MC.Operator))
-                    //    .FirstOrDefault()
-                    //    .SendSms()
-                    SmsMessage sms = new SmsMessage()
-                    {
-                        From = smppText.SourceAddress,
-                        To = smppText.DestAddress,
-                        Coding = (smppText.DataCoding == 8 ? 8 : 0),
-                        Message = messageText,
-                        AskDeliveryReceipt = true,
-                        Priority = smppText.PriorityFlag,
-                        RefId = send_sms_id.ToString(),
-                        PEID = smppText.PEID,
-                        TMID = smppText.TMID,
-                        TemplateId = smppText.TemplateId,
-                        Operator = @operator,
-                        RetryIndex = 0
-                    };
-                    sms.AdditionalData["sms_campaign_head_details_id"] = (long)0;
-                    sms.AdditionalData["sms_campaign_details_id"] = (long) 0;
-                    sms.AdditionalData["smpp_user_details_id"] = (int)((SmppSessionData)connection.Identifier).UserId;
-                    sms.AdditionalData["dlt_cost"] = session.DltCharge;
-                    sms.AdditionalData["sms_cost"] = session.SmsCost;
-                    sms.AdditionalData["sms_cost_mode"] = "1";
-                    Messages.Enqueue(@operator, sms);
+                //if (status == "SUB")
+                //{
+                //    //SmppConnectionManager
+                //    //    .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && @operator.Equals(x.MC.Operator))
+                //    //    .FirstOrDefault()
+                //    //    .SendSms()
+                //    SmsMessage sms = new SmsMessage()
+                //    {
+                //        From = smppText.SourceAddress,
+                //        To = smppText.DestAddress,
+                //        Coding = (smppText.DataCoding == 8 ? 8 : 0),
+                //        Message = messageText,
+                //        AskDeliveryReceipt = true,
+                //        Priority = smppText.PriorityFlag,
+                //        RefId = send_sms_id.ToString(),
+                //        PEID = smppText.PEID,
+                //        TMID = smppText.TMID,
+                //        TemplateId = smppText.TemplateId,
+                //        Operator = @operator,
+                //        RetryIndex = 0
+                //    };
+                //    sms.AdditionalData["sms_campaign_head_details_id"] = (long)0;
+                //    sms.AdditionalData["sms_campaign_details_id"] = (long)0;
+                //    sms.AdditionalData["smpp_user_details_id"] = (int)((SmppSessionData)connection.Identifier).UserId;
+                //    sms.AdditionalData["dlt_cost"] = session.DltCharge;
+                //    sms.AdditionalData["sms_cost"] = session.SmsCost;
+                //    sms.AdditionalData["sms_cost_mode"] = "1";
+                //    Messages.Enqueue(@operator, sms);
 
-                }
+                //}
                 #endregion
                 #endregion
 
