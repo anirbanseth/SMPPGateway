@@ -217,6 +217,7 @@ namespace SMSGateway.SMPPClient
                     message: Utility.RemoveApostropy(message_text),
                     senderid: message.From,
                     enitityid: message.PEID,
+                    tm_id: message.TMID,
                     templateid: message.TemplateId,
                     destination: message.To,
                     piority: message.Priority,

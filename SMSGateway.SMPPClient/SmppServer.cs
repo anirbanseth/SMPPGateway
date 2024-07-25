@@ -654,6 +654,7 @@ namespace SMSGateway.SMSCClient
                 #endregion
 
                 #region [ Check operator is active ]
+                
                 string[] activeOperators = SmppConnectionManager
                     .Connections.Where(x => x.CanSend && x.MC.TPS > 0 && routes.Contains(x.MC.Operator))
                     .Select(x => x.MC.Operator)
@@ -668,7 +669,9 @@ namespace SMSGateway.SMSCClient
                 }
                 else
                 {
-                    status = (e.MessageType == 3 ? "NEW" : "SUB"); // NEW for store and forward else SUB
+                    // add to sms quque instead of direct sending, checking active operator disabled - Anirban Seth 20247-07-18
+                    //status = (e.MessageType == 3 ? "NEW" : "SUB"); // NEW for store and forward else SUB
+                    status = "NEW";
                     @operator = activeOperators.Length == 1 ? activeOperators[0] : routes[new Random().Next(0, routes.Length - 1)];
                 }
                 #endregion
@@ -898,7 +901,7 @@ namespace SMSGateway.SMSCClient
                 //    connection.Disconnect();
                 //    connection.Dispose();
                 //}
-                throw ex;
+                throw;
             }
             catch (Exception ex)
             {
@@ -976,6 +979,7 @@ namespace SMSGateway.SMSCClient
                         message: c.ShortMessage,
                         senderid: c.SourceAddress,
                         enitityid: c.PEID, //e.OptionalParams.Where(x => x.Tag == 0x1400).Select(x => x.Value).FirstOrDefault(),
+                        tm_id: c.TMID,
                         templateid: c.TemplateId, // c.OptionalParams.Where(x => x.Tag == 0x1401).Select(x => x.Value).FirstOrDefault(),
                         destination: Convert.ToInt64(e.DestAddress),
                         piority: e.PriorityFlag,
@@ -1231,6 +1235,7 @@ namespace SMSGateway.SMSCClient
                     message: messageText,
                     senderid: smppText.SourceAddress,
                     enitityid: smppText.PEID,
+                    tm_id: smppText.TMID,
                     templateid: smppText.TemplateId,
                     destination: Convert.ToInt64(smppText.DestAddress),
                     piority: smppText.PriorityFlag,

@@ -42,7 +42,7 @@ namespace SMSGateway.DataManager
               $"SELECT destination, coding, message, senderid, enitityid, send_sms_id, " +
               $"templateid, piority, status, operator, retry_count, dlt_cost, sms_cost, " +
               $"sms_campaign_head_details_id, sms_campaign_details_id, smpp_user_details_id, " +
-              $"sms_cost_mode " +
+              $"sms_cost_mode, tm_id " +
               $"FROM send_sms WHERE status = @status; ";
             //$"AND operator = '$operator'"; 
 
@@ -69,7 +69,7 @@ namespace SMSGateway.DataManager
                     m.AskDeliveryReceipt = true;
                     m.Priority = (byte) row.Field<int>("piority");
                     m.PEID = row.Field<string>("enitityid");
-                    m.TMID = "";
+                    m.TMID = row.Field<string>("tm_id");
                     m.TemplateId = row.Field<string>("templateid");
                     m.RefId = row.Field<Int64>("send_sms_id").ToString();
                     m.Operator = row.Field<string>("operator");
@@ -176,7 +176,8 @@ namespace SMSGateway.DataManager
             int? session_id,
             int retry_count,
             char? sms_cost_mode,
-            string source
+            string source,
+            string? tm_id
         )
         {
             string query = $"insert into send_sms (" +
@@ -205,7 +206,8 @@ namespace SMSGateway.DataManager
                 $"session_id, " +
                 $"retry_count, " +
                 $"sms_cost_mode, " +
-                $"source" +
+                $"source, " +
+                $"tm_id" +
                 $") values (" +
                 //$"@send_sms_id, " +
                 $"@sms_campaign_head_details_id, " +
@@ -232,7 +234,8 @@ namespace SMSGateway.DataManager
                 $"@session_id, " +
                 $"@retry_count, " +
                 $"@sms_cost_mode, " +
-                $"@source" +
+                $"@source, " +
+                $"@tm_id" +
                 $"); select LAST_INSERT_ID() ;";
 
             MySqlDbManager db = new MySqlDbManager(query, true);
@@ -262,6 +265,7 @@ namespace SMSGateway.DataManager
             db.AddIntegerPara("retry_count", retry_count);
             db.AddCharPara("sms_cost_mode", 1, sms_cost_mode);
             db.AddVarcharPara("source", 3, source);
+            db.AddNVarcharPara("tm_id", 255, tm_id);
             DataTable dataTable = await db.GetTableAsync();
 
             if (!ReferenceEquals(dataTable, null))
@@ -300,18 +304,19 @@ namespace SMSGateway.DataManager
             string message_id,
             string smpp_instance,
             int retry_index,
-            string sms_cost_mode
+            string sms_cost_mode,
+            string tm_id
         )
         {
             string query = $"INSERT INTO sent_sms( " +
                 $" send_sms_s1_id, send_sms_p1_id, send_sms_id, sms_campaign_head_details_id, sms_campaign_details_id " +
                 $", smpp_user_details_id, message, senderid, enitityid, templateid, destination, piority, coding, smsc_details_id " +
                 $", create_date, status, dlt_cost, sms_cost, p1_move_date, s1_move_date, move_date, pdu_id, sequence_id, message_id " +
-                $", smpp_instance, retry_index, sms_cost_mode)VALUES(" +
+                $", smpp_instance, retry_index, sms_cost_mode, tm_id)VALUES(" +
                 $" @send_sms_s1_id, @send_sms_p1_id, @send_sms_id, @sms_campaign_head_details_id, @sms_campaign_details_id " +
                 $", @smpp_user_details_id, @message, @senderid, @enitityid, @templateid, @destination, @piority, @coding, @smsc_details_id " +
                 $", @create_date, @status, @dlt_cost, @sms_cost, @p1_move_date, @s1_move_date, @move_date, @pdu_id, @sequence_id, @message_id " +
-                $", @smpp_instance, @retry_index, @sms_cost_mode)";
+                $", @smpp_instance, @retry_index, @sms_cost_mode, @tm_id)";
 
             MySqlDbManager db = new MySqlDbManager(query, true);
             db.AddIntegerBigPara("sent_sms_id", sent_sms_id);
@@ -342,7 +347,7 @@ namespace SMSGateway.DataManager
             db.AddVarcharPara("smpp_instance", 50, smpp_instance);
             db.AddIntegerPara("retry_index", retry_index);
             db.AddVarcharPara("sms_cost_mode", 1, sms_cost_mode);
-
+            db.AddVarcharPara("tm_id", 255, tm_id);
             await db.RunActionQueryAsync();
 
         }
@@ -384,7 +389,7 @@ namespace SMSGateway.DataManager
             MySqlDbManager db = new MySqlDbManager(query, true);
             db.AddVarcharPara("message_id", 255, message_id);
             db.AddVarcharPara("destination", 24, destination);
-            db.AddVarcharPara("sender", 10, sender);
+            db.AddVarcharPara("sender", 24, sender);
             db.AddVarcharPara("sms_dlr_status_id", 10, sms_dlr_status_id);
             db.AddVarcharPara("smsc_details_id", 50, smsc_details_id);
             db.AddIntegerBigPara("smpp_user_details_id", smpp_user_details_id);
