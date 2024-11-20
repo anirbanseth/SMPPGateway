@@ -35,7 +35,7 @@ namespace SMSGateway.SMPPClient
                 _logger.LogDebug("DeliveryReportWorker :: Complete");
                 try
                 {
-                    await Task.Delay(100, stoppingToken);
+                    await Task.Delay(500, stoppingToken);
                 }
                 catch (TaskCanceledException exception)
                 {

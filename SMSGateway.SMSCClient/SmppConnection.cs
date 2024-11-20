@@ -1123,7 +1123,7 @@ namespace SMSGateway.SMSCClient
                     Array.Copy(tag, 0, _SUBMIT_SM_PDU, pos, tag.Length);
                     pos += tag.Length;
 
-                    int l = item.Value.Length + 1;
+                    int l = item.Value.Length; // + 1; airtel fix - Anirban Seth - 2024-11-20
                     Utility.ConvertShortToArray((short)l, out length);
                     //logMessage(LogLevels.LogPdu, "Submit SM | LENGTH :: " + l.ToString() + " :: " + BitConverter.ToString(length));
                     Array.Copy(length, 0, _SUBMIT_SM_PDU, pos, length.Length);
@@ -1134,7 +1134,7 @@ namespace SMSGateway.SMSCClient
                     Array.Copy(value, 0, _SUBMIT_SM_PDU, pos, value.Length);
                     pos += value.Length;
 
-                    pos += 1;
+                    //pos += 1; airtel fix - Anirban Seth - 2024-11-20
                 }
                 //logMessage(LogLevels.LogPdu, "SubmitSM |++ " + BitConverter.ToString(_SUBMIT_SM_PDU));
                 #endregion
